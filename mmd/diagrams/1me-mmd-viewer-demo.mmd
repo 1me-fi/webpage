@@ -1,0 +1,29 @@
+%% 1ME-MMD: v1
+%% id: =DOC+MMD-VIEWER-DEMO
+%% title: 1ME MMD -kaavion luonti ja tallennus
+%% type: flowchart
+%% aspect: =DOC+MMD-VIEWER
+%% owner: 1ME
+%% status: draft
+%% updated: 2026-05-29
+%% tags: mmd, mermaid, preset, viewer
+%% purpose: Näyttää miten MMD-tiedosto droppautuu näkymään, renderöityy ja tallentuu presetiksi.
+%% /1ME-MMD
+flowchart TD
+  START([Droppaa .mmd-tiedosto]):::start
+  READ[Selain lukee tiedoston sisällön]:::action
+  META[Poimi otsikko, tyyppi, tagit ja tarkoitus]:::meta
+  SAVE[Tallenna preset selaimeen]:::save
+  LIST[Näytä painikkeena vasemmassa palkissa]:::ui
+  OPEN[Valitse kaavio yhdellä painalluksella]:::ui
+  RENDER[Renderöi Mermaid-kaaviona]:::output
+  EXPORT[Lataa MMD / SVG / PNG / PDF]:::output
+
+  START --> READ --> META --> SAVE --> LIST --> OPEN --> RENDER --> EXPORT
+
+  classDef start fill:#eef7ee,stroke:#1f7a4d,stroke-width:2px,color:#143822;
+  classDef action fill:#fffaf2,stroke:#c46a2b,stroke-width:1.5px,color:#1f2933;
+  classDef meta fill:#fff5d6,stroke:#a45f00,stroke-width:1.5px,color:#3b2500;
+  classDef save fill:#eef6ff,stroke:#315c61,stroke-width:1.5px,color:#102a35;
+  classDef ui fill:#f3efff,stroke:#7357c8,stroke-width:1.5px,color:#24124f;
+  classDef output fill:#f1f8f5,stroke:#1f7a4d,stroke-width:1.5px,color:#143822;
