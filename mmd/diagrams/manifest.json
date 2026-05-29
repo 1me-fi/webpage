@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "updated": "2026-05-29",
+  "diagrams": [
+    {
+      "id": "=DOC+MMD-VIEWER-DEMO",
+      "title": "1ME MMD -kaavion luonti ja tallennus",
+      "path": "/mmd/diagrams/1me-mmd-viewer-demo.mmd",
+      "category": "demo",
+      "tags": ["mmd", "mermaid", "preset", "viewer"],
+      "description": "Ensimmäinen esimerkkikaavio MMD-näkymälle."
+    }
+  ]
+}
