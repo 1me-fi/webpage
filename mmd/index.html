@@ -33,6 +33,11 @@
         <button class="button ghost" id="refreshLibraryBtn" type="button">Päivitä</button>
       </div>
       <div class="panel-body">
+        <div class="drop-zone" id="dropZone">
+          <strong>Droppaa .mmd tähän</strong>
+          <span>Tiedosto avataan, renderöidään ja tallennetaan presetiksi vasempaan palkkiin.</span>
+        </div>
+
         <div class="input-row">
           <label for="diagramSearch">Haku</label>
           <input class="search-input" id="diagramSearch" type="search" placeholder="Hae otsikolla, tagilla tai sisällöllä" />
@@ -46,14 +51,14 @@
         </div>
 
         <div class="toolbar">
-          <label class="file-button" for="fileInput">Tuo .mmd</label>
+          <label class="file-button" for="fileInput">Valitse .mmd</label>
           <input id="fileInput" type="file" accept=".mmd,.txt,.md" multiple />
           <button class="button" id="newDiagramBtn" type="button">Uusi</button>
-          <button class="button danger" id="clearLocalBtn" type="button">Tyhjennä omat</button>
+          <button class="button danger" id="clearLocalBtn" type="button">Tyhjennä presetit</button>
         </div>
 
         <p class="help-text">
-          Gitissä olevat kaaviot ladataan manifestista. Omat luonnokset tallennetaan tähän selaimeen.
+          Presetit tallentuvat tällä hetkellä selaimen paikalliseen muistiin. Gitissä olevat kaaviot ladataan manifestista.
           Pysyvä tallennus voidaan myöhemmin liittää backendiin tai GitHubiin.
         </p>
 
@@ -67,7 +72,7 @@
           <h2>MMD-editori</h2>
           <div class="toolbar">
             <button class="button primary" id="renderBtn" type="button">Renderöi</button>
-            <button class="button secondary" id="saveLocalBtn" type="button">Tallenna</button>
+            <button class="button secondary" id="saveLocalBtn" type="button">Tallenna presetiksi</button>
           </div>
         </div>
         <div class="panel-body">
@@ -75,12 +80,12 @@
           <div class="toolbar" style="margin-top: 10px;">
             <button class="button" id="copyBtn" type="button">Kopioi</button>
             <button class="button" id="downloadMmdBtn" type="button">Lataa .mmd</button>
-            <button class="button" id="exportLocalBtn" type="button">Vie omat JSON</button>
+            <button class="button" id="exportLocalBtn" type="button">Vie presetit JSON</button>
             <button class="button danger" id="clearEditorBtn" type="button">Tyhjennä editori</button>
           </div>
           <p class="help-text">
-            Suositus: käytä otsikkoblokkia <code>%% 1ME-MMD: v1</code>, <code>%% id:</code>,
-            <code>%% title:</code>, <code>%% type:</code>, <code>%% aspect:</code> ja <code>%% purpose:</code>.
+            Otsikko, tyyppi ja kuvaus poimitaan automaattisesti <code>%% title:</code>, <code>%% type:</code> ja
+            <code>%% purpose:</code> -riveiltä. Ilman otsikkoa käytetään tiedoston nimeä.
           </p>
         </div>
       </section>
@@ -104,7 +109,7 @@
             <div class="diagram-canvas" id="diagramCanvas">
               <div class="empty-state">
                 <strong>Kaavio ilmestyy tähän.</strong><br />
-                Valitse kaavio kirjastosta tai liitä Mermaid/MMD-teksti editoriin.
+                Droppaa .mmd vasemmalle tai valitse preset vasemmasta palkista.
               </div>
             </div>
           </div>
