@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>1ME MMD-editori</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/mmd/mmd.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+</head>
+<body class="mmd-page" data-default-view="editor">
+  <header class="mmd-topbar">
+    <a class="mmd-brand" href="/mmd/" aria-label="1ME MMD-editori">
+      <img src="/assets/logo.svg" alt="" />
+      <span>1ME<small>Sisäinen MMD-editori</small></span>
+    </a>
+    <nav class="mmd-nav" aria-label="Päänavigaatio">
+      <a href="/">Etusivu</a>
+      <a href="/mmd/">Kaaviot</a>
+      <a href="/mmd/editor.html">Editor</a>
+    </nav>
+  </header>
+  <main class="mmd-shell">
+    <aside class="panel sidebar">
+      <div class="panel-header"><h1>Kaaviokirjasto</h1><button class="button ghost" id="refreshLibraryBtn" type="button">Päivitä</button></div>
+      <div class="panel-body">
+        <div class="input-row"><label for="diagramSearch">Haku</label><input class="search-input" id="diagramSearch" type="search" placeholder="Hae otsikolla, tagilla tai sisällöllä" /></div>
+        <div class="input-row"><label for="categoryFilter">Kategoria</label><select class="select" id="categoryFilter"><option value="">Kaikki kategoriat</option></select></div>
+        <div class="toolbar"><label class="file-button" for="fileInput">Tuo .mmd</label><input id="fileInput" type="file" accept=".mmd,.txt,.md" multiple /><button class="button" id="newDiagramBtn" type="button">Uusi</button><button class="button danger" id="clearLocalBtn" type="button">Tyhjennä omat</button></div>
+        <p class="help-text">Gitissä olevat kaaviot ladataan manifestista. Omat luonnokset tallennetaan tähän selaimeen.</p>
+        <div class="diagram-list" id="diagramList"></div>
+      </div>
+    </aside>
+    <section class="workspace-grid">
+      <section class="panel editor-panel" id="editor">
+        <div class="panel-header"><h2>MMD-editori</h2><div class="toolbar"><button class="button primary" id="renderBtn" type="button">Renderöi</button><button class="button secondary" id="saveLocalBtn" type="button">Tallenna</button></div></div>
+        <div class="panel-body">
+          <textarea id="mmdInput" spellcheck="false" aria-label="MMD-syöte"></textarea>
+          <div class="toolbar" style="margin-top:10px"><button class="button" id="copyBtn" type="button">Kopioi</button><button class="button" id="downloadMmdBtn" type="button">Lataa .mmd</button><button class="button" id="exportLocalBtn" type="button">Vie omat JSON</button><button class="button danger" id="clearEditorBtn" type="button">Tyhjennä editori</button></div>
+          <p class="help-text">Suositus: käytä otsikkoblokkia <code>%% 1ME-MMD: v1</code>, <code>%% id:</code>, <code>%% title:</code>, <code>%% type:</code>, <code>%% aspect:</code> ja <code>%% purpose:</code>.</p>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-header"><h2>Kaavionäkymä</h2><div class="toolbar no-print"><button class="button" id="zoomOutBtn" type="button">-</button><button class="button" id="zoomResetBtn" type="button">100 %</button><button class="button" id="zoomInBtn" type="button">+</button><button class="button" id="downloadSvgBtn" type="button">SVG</button><button class="button" id="downloadPngBtn" type="button">PNG</button><button class="button secondary" id="downloadPdfBtn" type="button">PDF</button><button class="button" id="printBtn" type="button">Tulosta</button></div></div>
+        <div class="panel-body"><div id="status" class="status warn">Ladataan kaavioita…</div><div class="preview-wrap" id="previewWrap"><div class="diagram-canvas" id="diagramCanvas"><div class="empty-state"><strong>Kaavio ilmestyy tähän.</strong><br />Valitse kaavio kirjastosta tai liitä Mermaid/MMD-teksti editoriin.</div></div></div><div class="meta-grid" id="metaGrid"></div><div id="validationBox" class="status warn" style="margin-top:12px">Ei tarkistettua kaaviota.</div></div>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="/mmd/app.js"></script>
+</body>
+</html>
