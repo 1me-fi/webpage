@@ -87,7 +87,6 @@ select {
   padding: 26px 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
 }
 
@@ -106,28 +105,6 @@ select {
   display: block;
   object-fit: contain;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
-}
-
-.login-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid rgba(255, 239, 220, 0.24);
-  border-radius: 999px;
-  background: rgba(255, 248, 239, 0.08);
-  backdrop-filter: blur(14px);
-  text-decoration: none;
-  font-weight: 750;
-  letter-spacing: -0.01em;
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
-}
-
-.login-pill:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 239, 220, 0.42);
-  background: rgba(255, 248, 239, 0.14);
 }
 
 .public-main {
@@ -187,11 +164,6 @@ select {
   .brand-mark {
     width: 42px;
     height: 35px;
-  }
-
-  .login-pill {
-    min-height: 40px;
-    padding: 0 14px;
   }
 
   .hero-logo {
