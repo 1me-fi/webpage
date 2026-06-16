@@ -1,38 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">1ME logo</title>
-  <desc id="desc">Punainen pyöreä merkki ja musta käsin piirretty viivasto.</desc>
-  <defs>
-    <radialGradient id="red" cx="42%" cy="34%" r="70%">
-      <stop offset="0" stop-color="#e84a21"/>
-      <stop offset="0.45" stop-color="#bf1f0f"/>
-      <stop offset="1" stop-color="#691008"/>
-    </radialGradient>
-    <radialGradient id="shine" cx="32%" cy="22%" r="72%">
-      <stop offset="0" stop-color="#fff2df" stop-opacity="0.42"/>
-      <stop offset="0.28" stop-color="#ffffff" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="paper" x="-12%" y="-12%" width="124%" height="124%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="4" seed="17" result="noise"/>
-      <feColorMatrix type="saturate" values="0"/>
-      <feComponentTransfer>
-        <feFuncA type="table" tableValues="0 0.26"/>
-      </feComponentTransfer>
-      <feBlend mode="multiply" in="SourceGraphic" in2="noise"/>
-    </filter>
-    <filter id="softShadow" x="-20%" y="-15%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#1f120c" flood-opacity="0.24"/>
-    </filter>
-  </defs>
-  <circle cx="256" cy="250" r="214" fill="url(#red)" filter="url(#softShadow)"/>
-  <circle cx="256" cy="250" r="207" fill="url(#shine)" filter="url(#paper)" opacity="0.98"/>
-  <circle cx="256" cy="250" r="214" fill="none" stroke="#310704" stroke-opacity="0.45" stroke-width="8"/>
-  <g fill="none" stroke="#111111" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M259 128 C258 196 259 264 257 344"/>
-    <path d="M118 170 C177 182 223 193 260 202 C319 189 366 181 404 177"/>
-    <path d="M101 214 C153 215 206 217 259 221 C317 223 365 225 411 225"/>
-    <path d="M113 258 C170 250 217 247 259 250 C315 254 360 261 399 266"/>
-    <path d="M139 302 C181 302 221 303 259 304 C302 305 340 306 373 309"/>
-    <path d="M121 347 C171 337 217 329 258 328 C311 332 354 341 391 350"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="563" height="466" viewBox="-6.75 31.75 562.5 465.5" aria-label="Symmetrinen vektoriversio mustilla viivoilla, rajattu pienemmillä marginaaleilla">
+  <rect x="-6.75" y="31.75" width="562.5" height="465.5" fill="#EA580C"/>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Branches are drawn first so the center stem covers joins cleanly -->
+    <polyline points="73 104 274.5 140 476 104" stroke="#000000" stroke-width="5"/>
+    <line x1="52" y1="174" x2="497" y2="174" stroke="#000000" stroke-width="5"/>
+    <polyline points="78 234 274.5 209 471 234" stroke="#000000" stroke-width="5"/>
+    <polyline points="118 259 274.5 264 431 259" stroke="#000000" stroke-width="4"/>
+    <polyline points="103 314 274.5 299 446 314" stroke="#000000" stroke-width="4"/>
+    <polyline points="128 364 274.5 334 421 364" stroke="#000000" stroke-width="4"/>
+
+    <!-- Center stem drawn last to avoid visible caps/gaps at intersections -->
+    <line x1="274.5" y1="92" x2="274.5" y2="437" stroke="#000000" stroke-width="8"/>
   </g>
 </svg>
