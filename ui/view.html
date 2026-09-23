@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="ui-playground-api-base" content="https://europe-west1-oneme-dev.cloudfunctions.net/uiPlaygroundPublicHttp" />
+  <title>1ME UI Playground – Viewer</title>
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/playground.css" />
+</head>
+<body class="viewer-page">
+  <header class="top">
+    <a class="brand" href="/">1ME</a>
+    <a class="back" href="./">← Prototyypit</a>
+  </header>
+  <main class="wrap">
+    <p class="eyebrow">UI Playground</p>
+    <h1 id="prototype-name">Ladataan…</h1>
+    <p id="prototype-meta" class="meta"></p>
+    <p id="viewer-status" class="status" role="status">Ladataan prototyyppiversiota…</p>
+    <iframe id="prototype-frame" title="UI-prototyypin eristetty esikatselu" sandbox="allow-scripts"></iframe>
+  </main>
+  <script type="module" src="view.mjs?v=20260923-mcp"></script>
+</body>
+</html>

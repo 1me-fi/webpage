@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="ui-playground-api-base" content="https://europe-west1-oneme-dev.cloudfunctions.net/uiPlaygroundPublicHttp" />
   <title>1ME UI Playground</title>
   <meta name="description" content="1ME UI Playground. Staattisia prototyyppejä, ei oikeaa projektidataa." />
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
@@ -19,10 +20,36 @@
     <p class="lead">
       Klikattavia käyttöliittymäkokeiluja. Tiedot ovat synteettisiä eivätkä kuulu oikeaan projektiin.
     </p>
+    <div class="catalog-controls" aria-label="Prototyyppiluettelon suodattimet">
+      <label>
+        Hae
+        <input id="catalog-search" type="search" placeholder="Nimi tai kuvaus" />
+      </label>
+      <label>
+        Tekijä
+        <select id="catalog-creator"><option value="">Kaikki tekijät</option></select>
+      </label>
+      <button id="clear-filters" type="button">Tyhjennä suodattimet</button>
+    </div>
     <p id="catalog-status" class="status" role="status">Ladataan prototyyppejä…</p>
-    <ul id="catalog" class="catalog"></ul>
+    <div class="catalog-scroll">
+      <table id="catalog" class="catalog">
+        <thead>
+          <tr>
+            <th><button type="button" data-sort="name" aria-sort="none">Nimi</button></th>
+            <th><button type="button" data-sort="creator" aria-sort="none">Tekijä</button></th>
+            <th><button type="button" data-sort="version" aria-sort="none">Versio</button></th>
+            <th>Kuvaus</th>
+            <th><button type="button" data-sort="createdAt" aria-sort="none">Luotu</button></th>
+            <th><button type="button" data-sort="updatedAt" aria-sort="none">Muokattu</button></th>
+            <th>Avaa</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </main>
 
-  <script type="module" src="playground.mjs?v=20260923-mime"></script>
+  <script type="module" src="playground.mjs?v=20260923-mcp"></script>
 </body>
 </html>

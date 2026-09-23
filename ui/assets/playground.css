@@ -53,43 +53,90 @@ h1 {
   margin: 0 0 0.5rem;
 }
 
-.catalog {
-  list-style: none;
-  padding: 0;
-  margin: 1.5rem 0 3rem;
-  display: grid;
-  gap: 1rem;
+.catalog-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
 }
 
-.card {
-  background: var(--card);
+.catalog-controls label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.catalog-controls input,
+.catalog-controls select {
+  min-height: 40px;
+  min-width: 13rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   color: var(--ink);
-  border-radius: 16px;
-  padding: 1.1rem 1.15rem 1.2rem;
+  background: var(--card);
+  font: inherit;
 }
 
-.card h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.35rem;
+.catalog-controls button {
+  min-height: 40px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+  color: var(--paper);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
 }
 
-.desc { margin: 0 0 0.8rem; }
-
-.card dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem 1rem;
-  margin: 0 0 1rem;
+.catalog-scroll {
+  overflow-x: auto;
+  margin: 1rem 0 3rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
 }
 
-.card dt {
+.catalog {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.catalog th,
+.catalog td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.catalog th {
+  color: #6b584c;
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #6b584c;
+  white-space: nowrap;
 }
 
-.card dd { margin: 0.1rem 0 0; }
+.catalog th button {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.catalog th button[aria-sort="ascending"]::after { content: " ↑"; }
+.catalog th button[aria-sort="descending"]::after { content: " ↓"; }
+.catalog tbody tr:last-child td { border-bottom: 0; }
 
 .open, .choice, .view button {
   display: inline-flex;
@@ -106,11 +153,49 @@ h1 {
   cursor: pointer;
 }
 
+#prototype-frame {
+  display: block;
+  width: 100%;
+  min-height: 70vh;
+  margin: 1rem 0 3rem;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
 a:focus-visible, button:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 
 @media (max-width: 420px) {
-  .card dl { grid-template-columns: 1fr; }
+  .top, .wrap { width: min(100% - 1rem, 960px); }
+  .catalog-controls > * { width: 100%; }
+  .catalog-controls input, .catalog-controls select { min-width: 0; width: 100%; }
+  .catalog-scroll { overflow: visible; border: 0; background: transparent; }
+  .catalog, .catalog thead, .catalog tbody, .catalog tr, .catalog th, .catalog td {
+    display: block;
+    min-width: 0;
+  }
+  .catalog thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .catalog tr {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+  }
+  .catalog td {
+    display: grid;
+    grid-template-columns: 6.25rem 1fr;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .catalog td::before {
+    content: attr(data-label);
+    color: #6b584c;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
 }
