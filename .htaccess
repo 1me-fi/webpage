@@ -3,6 +3,7 @@ Options -Indexes
 AddType image/svg+xml .svg
 AddType text/plain .mmd
 AddType application/json .json
+AddType text/javascript .mjs
 
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
