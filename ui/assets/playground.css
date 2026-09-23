@@ -1,0 +1,116 @@
+:root {
+  --bg: #100e0c;
+  --paper: #f6f1ea;
+  --muted: #d9cfc3;
+  --ink: #1c140f;
+  --card: #fffaf4;
+  --line: rgba(28, 20, 15, 0.14);
+  --accent: #9a3412;
+  --accent-ink: #fff7ed;
+  --focus: #c2410c;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--paper);
+  font-family: var(--font);
+}
+
+a { color: inherit; }
+
+.top, .wrap {
+  width: min(960px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 0;
+}
+
+.brand, .back {
+  color: var(--paper);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.eyebrow, .lead, .status, .meta {
+  color: var(--muted);
+}
+
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.1;
+  margin: 0 0 0.5rem;
+}
+
+.catalog {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 3rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 16px;
+  padding: 1.1rem 1.15rem 1.2rem;
+}
+
+.card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.desc { margin: 0 0 0.8rem; }
+
+.card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.card dt {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b584c;
+}
+
+.card dd { margin: 0.1rem 0 0; }
+
+.open, .choice, .view button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  text-decoration: none;
+  border: 2px solid transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .card dl { grid-template-columns: 1fr; }
+}

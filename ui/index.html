@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>1ME UI Playground</title>
+  <meta name="description" content="1ME UI Playground. Staattisia prototyyppejä, ei oikeaa projektidataa." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/playground.css" />
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/">1ME</a>
+    <p class="eyebrow">UI Playground</p>
+  </header>
+
+  <main class="wrap">
+    <h1>Prototyypit</h1>
+    <p class="lead">
+      Klikattavia käyttöliittymäkokeiluja. Tiedot ovat synteettisiä eivätkä kuulu oikeaan projektiin.
+    </p>
+    <p id="catalog-status" class="status" role="status">Ladataan prototyyppejä…</p>
+    <ul id="catalog" class="catalog"></ul>
+  </main>
+
+  <script type="module" src="playground.mjs"></script>
+</body>
+</html>

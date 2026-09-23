@@ -1,0 +1,16 @@
+{
+  "catalogVersion": 1,
+  "prototypes": [
+    {
+      "id": "tilamatriisi-atte-v1",
+      "name": "Tilamatriisi – demo",
+      "author": "Atte",
+      "version": "v1",
+      "createdAt": "2026-09-23T09:00:00.000Z",
+      "updatedAt": "2026-09-23T09:00:00.000Z",
+      "description": "Klikattava kurssimatriisi. Käyttää canonical-muotoista LMS-fixturea vain lukuadapterin kautta.",
+      "href": "prototypes/tilamatriisi/atte/v1/index.html",
+      "fixture": "data/fixtures/lms-course.json"
+    }
+  ]
+}
