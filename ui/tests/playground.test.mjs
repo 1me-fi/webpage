@@ -17,7 +17,9 @@ test("root page stays the public 1ME page", () => {
   const html = readFileSync(join(root, "index.html"), "utf8");
   assert.match(html, /Your digital twin/);
   assert.doesNotMatch(html, /UI Playground/);
-  assert.match(readFileSync(join(root, ".htaccess"), "utf8"), /Options -Indexes/);
+  const htaccess = readFileSync(join(root, ".htaccess"), "utf8");
+  assert.match(htaccess, /Options -Indexes/);
+  assert.match(htaccess, /AddType text\/javascript \.mjs/);
 });
 
 test("catalog lists only complete prototypes and keeps the page model if a row is bad", () => {

@@ -32,6 +32,10 @@ Kopioi edellinen versio uudeksi hakemistoksi, esimerkiksi `v2/`. Päivitä vain 
 
 Jätä vanha hakemisto ja sen luettelorivi paikalleen. Suora URL säilyy.
 
+## Hosting
+
+`.mjs`-moduulit tarvitsevat MIME-tyypin `text/javascript`. Se on asetettu repon juuren `.htaccess`-tiedostossa. Ilman sitä selain jättää Playgroundin JavaScriptin ajamatta, jos palvelin tarjoaa `.mjs`-tiedostot muodossa `application/octet-stream`.
+
 ## Tarkistus
 
 ```bash
