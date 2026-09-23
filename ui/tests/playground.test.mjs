@@ -77,6 +77,25 @@ test("catalog accepts public API version rows and filters plus sorts them safely
   assert.equal(parsed.prototypes[0].name, "<img src=x onerror=alert(1)>");
 });
 
+test("catalog accepts Firestore REST timestamp wire format _seconds", () => {
+  const parsed = parsePrototypeCatalog({
+    versions: [
+      {
+        prototypeId: "tilamatriisi-atte",
+        name: "Tilamatriisi",
+        creatorDisplay: "Atte",
+        versionNumber: 1,
+        createdAt: { _seconds: 1790178917, _nanoseconds: 988000000 },
+        updatedAt: { _seconds: 1790178917, _nanoseconds: 988000000 },
+      },
+    ],
+  });
+  assert.equal(parsed.error, null);
+  assert.equal(parsed.skipped.length, 0);
+  assert.equal(parsed.prototypes.length, 1);
+  assert.match(parsed.prototypes[0].createdAt, /^20\d{2}-/);
+});
+
 test("viewer keeps generated bundles in a scripts-only sandbox", () => {
   const viewer = readFileSync(join(ui, "view.html"), "utf8");
   const script = readFileSync(join(ui, "view.mjs"), "utf8");

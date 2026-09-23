@@ -3,8 +3,13 @@ function toIsoString(value) {
   if (value && typeof value === "object" && typeof value.toDate === "function") {
     return value.toDate().toISOString();
   }
-  if (value && typeof value === "object" && typeof value.seconds === "number") {
-    return new Date(value.seconds * 1000).toISOString();
+  if (value && typeof value === "object") {
+    const seconds = typeof value.seconds === "number"
+      ? value.seconds
+      : typeof value._seconds === "number"
+        ? value._seconds
+        : null;
+    if (seconds != null) return new Date(seconds * 1000).toISOString();
   }
   return "";
 }
