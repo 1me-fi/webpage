@@ -1,13 +1,24 @@
 # 1ME UI Playground
 
-Playground on staattinen paikka UI-ideoiden kokeiluun osoitteessa `/ui/`.
+Playground on julkinen UI-ideoiden kokeilupaikka osoitteessa `/ui/`.
 
 Se ei ole Studio, STUI-standardi eikä tuotannon LMS. Se ei lue eikä kirjoita oikeaa projektidataa.
 
 ## Mistä tiedot tulevat
 
-- Prototyyppilista: `ui/data/prototypes.json`
+- Prototyyppilista: oletuksena Backendin julkinen `uiPlaygroundPublicHttp/catalog` API
+- Varaluettelo: `ui/data/prototypes.json`, jos API ei ole saatavilla
 - LMS-fixture: `ui/data/fixtures/lms-course.json`
+
+API-kanta voidaan vaihtaa kehitystä varten `ui-playground-api-base`-meta-tagilla,
+`window.__UIPLAYGROUND_API_BASE__`-arvolla tai URL:n `?apiBase=`-parametrilla.
+Katalogi näyttää jokaisen immutable-version omana rivinään. Haku kohdistuu nimeen
+ja kuvaukseen, ja tekijäsuodatin muodostetaan ladatusta datasta.
+
+API-julkaisut avautuvat `view.html`-viewerissä. Viewer suorittaa prototyypin
+vain `sandbox="allow-scripts"`-iframe-kehyksessä; AI-tuotettua HTML:ää ei lisätä
+Playgroundin parent-dokumenttiin. Vanhat staattiset prototyyppipolut avautuvat
+edelleen suoraan, kun API-varaluettelo on käytössä.
 
 Fixture on synteettinen. Sen kurssi, moduulit, päivät, materiaalit, tehtävät, kokeet ja osallistujat noudattavat platformin LMS Studio MVP -mallia (`docs/data/lms-studio-mvp-data-model-v1.md`, päivän `contentItems`: `docs/domain/lms-day-content-order-v1.md`).
 
@@ -19,7 +30,7 @@ Fixture on synteettinen. Sen kurssi, moduulit, päivät, materiaalit, tehtävät
 
 1. Tee hakemisto `ui/prototypes/<aihe>/<tekijä>/v1/`.
 2. Lisää sinne oma `index.html` ja tarvittaessa oma CSS/JS.
-3. Lisää rivi `ui/data/prototypes.json`-tiedostoon. Pakolliset kentät: `id`, `name`, `author`, `version`, `createdAt`, `updatedAt`, `description`, `href`.
+3. Kehityksen staattiseen varaluetteloon lisää rivi `ui/data/prototypes.json`-tiedostoon. Pakolliset kentät: `id`, `name`, `author`, `version`, `createdAt`, `updatedAt`, `description`, `href`.
 4. Avaa proto suoralla polulla ja linkitä takaisin Playground-etusivulle.
 
 Virheellinen rivi ohitetaan. Yksi rikkoutunut proto ei tyhjennä koko listaa.
