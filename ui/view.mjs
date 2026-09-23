@@ -1,3 +1,5 @@
+import { sandboxBundle } from "./sandboxBundle.mjs";
+
 const DEFAULT_API_BASE = "https://europe-west1-oneme-dev.cloudfunctions.net/uiPlaygroundPublicHttp";
 const name = document.querySelector("#prototype-name");
 const meta = document.querySelector("#prototype-meta");
@@ -12,16 +14,16 @@ function configuredApiBase() {
     || DEFAULT_API_BASE;
 }
 
-export function sandboxBundle(bundle) {
-  const css = typeof bundle?.css === "string" ? bundle.css : "";
-  const html = typeof bundle?.html === "string" ? bundle.html : "";
-  const js = typeof bundle?.js === "string" ? bundle.js.replace(/<\/script/gi, "<\\/script") : "";
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; font-src data:"><style>${css}</style></head><body>${html}<script>${js}<\/script></body></html>`;
+function apiUrl(path) {
+  const base = configuredApiBase().replace(/\/+$/, "");
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-function apiUrl(prototypeId, version) {
-  const base = configuredApiBase().replace(/\/+$/, "");
-  return `${base}/prototypes/${encodeURIComponent(prototypeId)}/versions/${encodeURIComponent(version)}`;
+async function loadFixture(fixtureRef) {
+  if (!fixtureRef || typeof fixtureRef !== "string") return null;
+  const response = await fetch(apiUrl(`/fixtures/${encodeURIComponent(fixtureRef)}`), { cache: "no-store" });
+  if (!response.ok) throw new Error(`fixture HTTP ${response.status}`);
+  return response.json();
 }
 
 async function main() {
@@ -34,14 +36,21 @@ async function main() {
     return;
   }
   try {
-    const response = await fetch(apiUrl(prototypeId, version), { cache: "no-store" });
+    const response = await fetch(
+      apiUrl(`/prototypes/${encodeURIComponent(prototypeId)}/versions/${encodeURIComponent(version)}`),
+      { cache: "no-store" },
+    );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const prototype = await response.json();
     if (!prototype?.bundle || typeof prototype.bundle !== "object") throw new Error("Bundle puuttuu.");
+    const fixtureRef = prototype.bundle.fixtureRef || prototype.fixtureRef || null;
+    const fixture = fixtureRef ? await loadFixture(fixtureRef) : null;
     name.textContent = prototype.name || prototypeId;
-    meta.textContent = `${prototype.creatorDisplay || prototype.createdBy || "—"} · v${prototype.versionNumber ?? version}`;
-    frame.srcdoc = sandboxBundle(prototype.bundle);
-    status.textContent = "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.";
+    meta.textContent = `${prototype.creatorDisplay || prototype.createdBy?.display || prototype.createdBy || "—"} · v${prototype.versionNumber ?? version}`;
+    frame.srcdoc = sandboxBundle(prototype.bundle, fixture);
+    status.textContent = fixtureRef
+      ? "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä (fixture parentista)."
+      : "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.";
   } catch (error) {
     console.error(error);
     name.textContent = "Prototyyppiä ei voitu avata";

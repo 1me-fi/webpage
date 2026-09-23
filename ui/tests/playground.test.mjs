@@ -80,10 +80,46 @@ test("catalog accepts public API version rows and filters plus sorts them safely
 test("viewer keeps generated bundles in a scripts-only sandbox", () => {
   const viewer = readFileSync(join(ui, "view.html"), "utf8");
   const script = readFileSync(join(ui, "view.mjs"), "utf8");
+  const sandbox = readFileSync(join(ui, "sandboxBundle.mjs"), "utf8");
   assert.match(viewer, /sandbox="allow-scripts"/);
   assert.doesNotMatch(viewer, /allow-same-origin|allow-top-navigation|allow-forms/);
   assert.match(script, /name\.textContent/);
   assert.match(script, /frame\.srcdoc/);
+  assert.match(script, /loadFixture/);
+  assert.match(script, /sandboxBundle/);
+  assert.match(sandbox, /__UIPLAYGROUND_FIXTURE__/);
+  assert.match(sandbox, /connect-src 'none'/);
+});
+
+test("sandboxBundle injects fixture and escapes script breakouts", async () => {
+  const { sandboxBundle, serializeFixtureForSrcdoc } = await import("../sandboxBundle.mjs");
+  const fixture = { course: { id: "c1", title: "T</script><img src=x onerror=alert(1)>" } };
+  const serialized = serializeFixtureForSrcdoc(fixture);
+  assert.doesNotMatch(serialized, /<\/script/i);
+  assert.match(serialized, /\\u003c/);
+  const doc = sandboxBundle(
+    { html: "<main id=\"board\"></main>", css: "body{}", js: "window.__RAN__=true;" },
+    fixture,
+  );
+  assert.match(doc, /window\.__UIPLAYGROUND_FIXTURE__=/);
+  assert.match(doc, /connect-src 'none'/);
+  assert.doesNotMatch(doc, /<\/script><img/i);
+});
+
+test("Tilamatriisi sandbox bundle has no fetch or module imports", async () => {
+  const { tilamatriisiSandboxHtml } = await import(
+    "../prototypes/tilamatriisi/atte/v1/buildSandboxHtml.mjs"
+  );
+  const indexHtml = readFileSync(join(ui, "prototypes/tilamatriisi/atte/v1/index.html"), "utf8");
+  const js = readFileSync(join(ui, "prototypes/tilamatriisi/atte/v1/proto.sandbox.js"), "utf8");
+  const html = tilamatriisiSandboxHtml(indexHtml);
+  assert.match(html, /id="course-title"/);
+  assert.doesNotMatch(html, /<script/i);
+  assert.doesNotMatch(html, /class="back"/);
+  assert.match(js, /__UIPLAYGROUND_FIXTURE__/);
+  assert.doesNotMatch(js, /\bfetch\s*\(/);
+  assert.doesNotMatch(js, /\bimport\s/);
+  assert.doesNotMatch(js, /\bfrom\s+['"]/);
 });
 
 test("listed prototype files exist", () => {
