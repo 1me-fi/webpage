@@ -53,8 +53,9 @@ async function main() {
       : "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.";
   } catch (error) {
     console.error(error);
-    name.textContent = "Prototyyppiä ei voitu avata";
-    status.textContent = "Julkaistua prototyyppiversiota ei löytynyt tai sitä ei voitu ladata.";
+    frame.removeAttribute("srcdoc");
+    name.textContent = "Prototyyppiversio ei ole saatavilla";
+    status.textContent = "Pyydetty versio on poistettu, sitä ei ole julkaistu tai sitä ei voitu ladata. Toista versiota ei avata automaattisesti.";
   }
 }
 

@@ -27,6 +27,17 @@ function versionNumber(value) {
   return match ? Number(match[0]) : Number.NaN;
 }
 
+export function isTrashedCatalogEntry(entry) {
+  if (!entry || typeof entry !== "object") return false;
+  const status = String(entry.status ?? entry.lifecycle ?? "").toLocaleLowerCase();
+  return entry.trashed === true
+    || entry.isTrashed === true
+    || entry.trashedAt != null
+    || entry.deletedAt != null
+    || status === "trashed"
+    || status === "deleted";
+}
+
 function normalizeEntry(entry, index) {
   const prototypeId = entry.prototypeId ?? entry.id;
   const version = versionLabel(entry.versionNumber ?? entry.version);
@@ -96,6 +107,10 @@ export function parsePrototypeCatalog(payload) {
   entries.forEach((entry, index) => {
     if (!entry || typeof entry !== "object") {
       skipped.push({ index, reason: "entry-not-object" });
+      return;
+    }
+    if (isTrashedCatalogEntry(entry)) {
+      skipped.push({ index, id: entry.prototypeId ?? entry.id ?? null, reason: "trashed" });
       return;
     }
     const normalized = normalizeEntry(entry, index);

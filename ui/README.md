@@ -7,13 +7,33 @@ Se ei ole Studio, STUI-standardi eikä tuotannon LMS. Se ei lue eikä kirjoita o
 ## Mistä tiedot tulevat
 
 - Prototyyppilista: oletuksena Backendin julkinen `uiPlaygroundPublicHttp/catalog` API
-- Varaluettelo: `ui/data/prototypes.json`, jos API ei ole saatavilla
+- Varaluettelo: `ui/data/prototypes.json`, vain kun julkinen API ei ole verkkotasolla tavoitettavissa
 - LMS-fixture: `ui/data/fixtures/lms-course.json`
 
 API-kanta voidaan vaihtaa kehitystä varten `ui-playground-api-base`-meta-tagilla,
 `window.__UIPLAYGROUND_API_BASE__`-arvolla tai URL:n `?apiBase=`-parametrilla.
 Katalogi näyttää jokaisen immutable-version omana rivinään. Haku kohdistuu nimeen
 ja kuvaukseen, ja tekijäsuodatin muodostetaan ladatusta datasta.
+
+Julkinen katalogi ei pyydä `includeArchived`- tai roskakoriparametreja. Backendin
+julkinen API on roskakorin auktoriteetti; selain myös ohittaa puolustavasti
+`trashed`-tilaan merkityt rivit. HTTP-virhe ei avaa staattista varaluetteloa,
+jottei poistettu Backend-malli voi palata näkyviin. Staattinen varaluettelo
+sisältää vain tämän repon perinteiset staattiset prototyypit.
+
+## Publisher-rooli
+
+Publisher-hallinta näkyy vain, kun host-sivu kytkee lyhytikäisen MCP access tokenin
+arvoon `window.__UIPLAYGROUND_PUBLISHER_ACCESS_TOKEN__`. Se käyttää
+`uiPlaygroundMcpHttp`-päätepistettä ja Backendin työkaluja
+`trash_prototype`, `trash_version`, `restore_prototype` ja
+`restore_version`; työkalunimet voi tarvittaessa konfiguroida
+`window.__UIPLAYGROUND_PUBLISHER_TOOLS__`-JSON-arvolla.
+
+Tässä staattisessa sivustossa ei ole kirjautumisvirtaa eikä tokenin hankintaa.
+Live-käyttöönotto vaatii turvallisen publisher OAuth -kirjautumisen, joka asettaa
+tokenin muistiin (ei URL:iin eikä pysyvään selainvarastoon), sekä Backendin
+roskakori-/palautustyökalujen julkaisemisen.
 
 API-julkaisut avautuvat `view.html`-viewerissä. Viewer suorittaa prototyypin
 vain `sandbox="allow-scripts"`-iframe-kehyksessä; AI-tuotettua HTML:ää ei lisätä

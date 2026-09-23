@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { filterCatalog, parsePrototypeCatalog, sortCatalog } from "../catalog.mjs";
+import { filterCatalog, isTrashedCatalogEntry, parsePrototypeCatalog, sortCatalog } from "../catalog.mjs";
+import { DEFAULT_PUBLISHER_TOOLS, parseMcpToolResult } from "../publisher.mjs";
 import { assertCanonicalFixture, buildCourseMatrix } from "../fixtureView.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -94,6 +95,63 @@ test("catalog accepts Firestore REST timestamp wire format _seconds", () => {
   assert.equal(parsed.skipped.length, 0);
   assert.equal(parsed.prototypes.length, 1);
   assert.match(parsed.prototypes[0].createdAt, /^20\d{2}-/);
+});
+
+test("catalog never renders trashed models or versions from a public payload", () => {
+  const parsed = parsePrototypeCatalog({
+    versions: [
+      {
+        prototypeId: "visible",
+        name: "Näkyvä",
+        creatorDisplay: "Atte",
+        versionNumber: 1,
+        createdAt: "2026-09-23T10:00:00.000Z",
+        updatedAt: "2026-09-23T10:00:00.000Z",
+      },
+      {
+        prototypeId: "deleted-version",
+        name: "Poistettu versio",
+        creatorDisplay: "Atte",
+        versionNumber: 2,
+        createdAt: "2026-09-23T10:00:00.000Z",
+        updatedAt: "2026-09-23T10:00:00.000Z",
+        trashedAt: "2026-09-23T12:00:00.000Z",
+      },
+      {
+        prototypeId: "deleted-model",
+        name: "Poistettu malli",
+        creatorDisplay: "Atte",
+        versionNumber: 1,
+        createdAt: "2026-09-23T10:00:00.000Z",
+        updatedAt: "2026-09-23T10:00:00.000Z",
+        status: "trashed",
+      },
+    ],
+  });
+  assert.deepEqual(parsed.prototypes.map((prototype) => prototype.prototypeId), ["visible"]);
+  assert.equal(parsed.skipped.filter((entry) => entry.reason === "trashed").length, 2);
+  assert.equal(isTrashedCatalogEntry({ deletedAt: "2026-09-23T12:00:00.000Z" }), true);
+});
+
+test("publisher controls use authenticated MCP tools without public archive parameters", () => {
+  const script = readFileSync(join(ui, "playground.mjs"), "utf8");
+  const page = readFileSync(join(ui, "index.html"), "utf8");
+  const viewer = readFileSync(join(ui, "view.mjs"), "utf8");
+  assert.match(page, />Roskakori</);
+  assert.match(script, /Siirrä roskakoriin/);
+  assert.match(script, /Palauta/);
+  assert.match(script, /includeTrashed: true/);
+  assert.doesNotMatch(script, /includeArchived/);
+  assert.match(viewer, /Toista versiota ei avata automaattisesti/);
+  assert.equal(DEFAULT_PUBLISHER_TOOLS.trashModel, "trash_prototype");
+  assert.equal(DEFAULT_PUBLISHER_TOOLS.trashVersion, "trash_version");
+  assert.equal(DEFAULT_PUBLISHER_TOOLS.restoreModel, "restore_prototype");
+  assert.equal(DEFAULT_PUBLISHER_TOOLS.restoreVersion, "restore_version");
+  assert.match(script, /versionNumber: prototype\.versionNumber/);
+  assert.deepEqual(
+    parseMcpToolResult({ result: { content: [{ type: "text", text: "{\"ok\":true}" }] } }),
+    { ok: true },
+  );
 });
 
 test("viewer keeps generated bundles in a scripts-only sandbox", () => {

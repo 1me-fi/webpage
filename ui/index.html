@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="ui-playground-api-base" content="https://europe-west1-oneme-dev.cloudfunctions.net/uiPlaygroundPublicHttp" />
+  <meta name="ui-playground-mcp-base" content="https://europe-west1-oneme-dev.cloudfunctions.net/uiPlaygroundMcpHttp" />
   <title>1ME UI Playground</title>
   <meta name="description" content="1ME UI Playground. Staattisia prototyyppejä, ei oikeaa projektidataa." />
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
@@ -31,6 +32,11 @@
       </label>
       <button id="clear-filters" type="button">Tyhjennä suodattimet</button>
     </div>
+    <div id="publisher-controls" class="publisher-controls" hidden>
+      <button id="open-trash" type="button">Roskakori</button>
+      <button id="close-trash" type="button" hidden>Takaisin luetteloon</button>
+    </div>
+    <p id="publisher-status" class="status" role="status" hidden></p>
     <p id="catalog-status" class="status" role="status">Ladataan prototyyppejä…</p>
     <div class="catalog-scroll">
       <table id="catalog" class="catalog">
@@ -43,6 +49,7 @@
             <th><button type="button" data-sort="createdAt" aria-sort="none">Luotu</button></th>
             <th><button type="button" data-sort="updatedAt" aria-sort="none">Muokattu</button></th>
             <th>Avaa</th>
+            <th id="publisher-column" hidden>Hallinta</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -50,6 +57,6 @@
     </div>
   </main>
 
-  <script type="module" src="playground.mjs?v=20260923-mcp"></script>
+  <script type="module" src="playground.mjs?v=20260923-trash"></script>
 </body>
 </html>
