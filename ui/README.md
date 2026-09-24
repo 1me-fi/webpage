@@ -7,13 +7,58 @@ Se ei ole Studio, STUI-standardi eikä tuotannon LMS. Se ei lue eikä kirjoita o
 ## Mistä tiedot tulevat
 
 - Prototyyppilista: oletuksena Backendin julkinen `uiPlaygroundPublicHttp/catalog` API
-- Varaluettelo: `ui/data/prototypes.json`, jos API ei ole saatavilla
+- Varaluettelo: `ui/data/prototypes.json`, vain kun julkinen API ei ole verkkotasolla tavoitettavissa
 - LMS-fixture: `ui/data/fixtures/lms-course.json`
 
 API-kanta voidaan vaihtaa kehitystä varten `ui-playground-api-base`-meta-tagilla,
 `window.__UIPLAYGROUND_API_BASE__`-arvolla tai URL:n `?apiBase=`-parametrilla.
 Katalogi näyttää jokaisen immutable-version omana rivinään. Haku kohdistuu nimeen
 ja kuvaukseen, ja tekijäsuodatin muodostetaan ladatusta datasta.
+
+Julkinen katalogi ei pyydä `includeArchived`- tai roskakoriparametreja. Backendin
+julkinen API on roskakorin auktoriteetti; selain myös ohittaa puolustavasti
+`trashed`-tilaan merkityt rivit. HTTP-virhe (esim. 5xx) ei avaa staattista
+varaluetteloa, jottei poistettu Backend-malli voi palata näkyviin. Staattinen
+varaluettelo avataan vain `TypeError`-verkkovirheessä (API tavoittamaton).
+
+Eksplisiittinen version URL (`view.html?prototypeId=&version=`) lataa juuri
+pyydetyn version. Jos pyyntö epäonnistuu, näytetään “ei saatavilla” ilman
+automaattista vaihtoa toiseen versioon. Onnistunut version GET näytetään myös
+silloin, kun juurimalli on roskakorissa (Backend sallii lukemisen).
+
+## Publisher-rooli
+
+Publisher-hallinta (juurimallin `trash_prototype` / `restore_prototype`) näkyy
+vain, kun sivulle on asetettu lyhytikäinen MCP access token. Versiotason
+roskakoria ei ole.
+
+### DEV harness (ei tuotantokirjautuminen)
+
+Kehitystä varten voi injektoida tokenin ennen `playground.mjs`-latausta:
+
+```html
+<script>
+  // DEV ONLY — ei OAuth; ei URL-parametria; ei localStorage/sessionStorage.
+  window.__UIPLAYGROUND_PUBLISHER_ACCESS_TOKEN__ = "pgac_…";
+</script>
+```
+
+Ilman tokenia publisher-kontrollit pysyvät piilossa.
+
+### First-party OAuth — ei toteutettu tällä sivustolla
+
+Backend tukee rajattua Playground OAuthia (PKCE S256, public client, CIMD).
+Selainkirjautumista ei silti kytketä tähän staattiseen sivustoon ilman erillistä
+tuote-/turvallisuuspäätöstä. Estävät kohdat:
+
+1. CIMD `client_id` pitää olla absoluuttinen **https**-URL, joka vastaa
+   metadata-dokumentin osoitetta. Backendin valmiit clientit
+   (`emulator`, `hosted-smoke`) hyväksyvät vain redirectin
+   `http://127.0.0.1:4178/oauth/callback` — ei webpage-polkuja.
+2. Staattisen sivuston first-party CIMD + redirect-URI -joukko (kanoninen
+   tuotanto-origin) on Platform-/Backend-päätös, ei paikallinen improvisaatio.
+3. Nykyinen OAuth write-työkalulista / MCP-pinta ei vielä sisällä
+   `trash_prototype` / `restore_prototype` (rinnakkainen Backend-työ).
 
 API-julkaisut avautuvat `view.html`-viewerissä. Viewer suorittaa prototyypin
 vain `sandbox="allow-scripts"`-iframe-kehyksessä; AI-tuotettua HTML:ää ei lisätä

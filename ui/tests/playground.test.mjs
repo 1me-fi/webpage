@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { filterCatalog, parsePrototypeCatalog, sortCatalog } from "../catalog.mjs";
+import { filterCatalog, isTrashedCatalogEntry, parsePrototypeCatalog, sortCatalog } from "../catalog.mjs";
+import { DEFAULT_PUBLISHER_TOOLS, parseMcpToolResult } from "../publisher.mjs";
 import { assertCanonicalFixture, buildCourseMatrix } from "../fixtureView.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -94,6 +95,99 @@ test("catalog accepts Firestore REST timestamp wire format _seconds", () => {
   assert.equal(parsed.skipped.length, 0);
   assert.equal(parsed.prototypes.length, 1);
   assert.match(parsed.prototypes[0].createdAt, /^20\d{2}-/);
+});
+
+test("catalog never renders trashed models or versions from a public payload", () => {
+  const parsed = parsePrototypeCatalog({
+    versions: [
+      {
+        prototypeId: "visible",
+        name: "Näkyvä",
+        creatorDisplay: "Atte",
+        versionNumber: 1,
+        createdAt: "2026-09-23T10:00:00.000Z",
+        updatedAt: "2026-09-23T10:00:00.000Z",
+      },
+      {
+        prototypeId: "deleted-version",
+        name: "Poistettu versio",
+        creatorDisplay: "Atte",
+        versionNumber: 2,
+        createdAt: "2026-09-23T10:00:00.000Z",
+        updatedAt: "2026-09-23T10:00:00.000Z",
+        trashedAt: "2026-09-23T12:00:00.000Z",
+      },
+      {
+        prototypeId: "deleted-model",
+        name: "Poistettu malli",
+        creatorDisplay: "Atte",
+        versionNumber: 1,
+        createdAt: "2026-09-23T10:00:00.000Z",
+        updatedAt: "2026-09-23T10:00:00.000Z",
+        status: "trashed",
+      },
+      {
+        prototypeId: "flagged",
+        name: "isTrashed",
+        creatorDisplay: "Atte",
+        versionNumber: 1,
+        createdAt: "2026-09-23T10:00:00.000Z",
+        updatedAt: "2026-09-23T10:00:00.000Z",
+        isTrashed: true,
+      },
+    ],
+  });
+  assert.deepEqual(parsed.prototypes.map((prototype) => prototype.prototypeId), ["visible"]);
+  assert.equal(parsed.skipped.filter((entry) => entry.reason === "trashed").length, 3);
+  assert.equal(isTrashedCatalogEntry({ deletedAt: "2026-09-23T12:00:00.000Z" }), true);
+  assert.equal(isTrashedCatalogEntry({ isTrashed: true }), true);
+});
+
+test("publisher controls are root-only trash/restore via MCP tools", () => {
+  const script = readFileSync(join(ui, "playground.mjs"), "utf8");
+  const page = readFileSync(join(ui, "index.html"), "utf8");
+  const publisher = readFileSync(join(ui, "publisher.mjs"), "utf8");
+  const viewer = readFileSync(join(ui, "view.mjs"), "utf8");
+  const readme = readFileSync(join(ui, "README.md"), "utf8");
+
+  assert.match(page, />Roskakori</);
+  assert.match(script, /Siirrä malli roskakoriin/);
+  assert.match(script, /Palauta malli/);
+  assert.match(script, /includeTrashed: true/);
+  assert.doesNotMatch(script, /includeArchived/);
+  assert.doesNotMatch(script, /trash-version|restore-version/);
+  assert.doesNotMatch(script, /["']trash_version["']|["']restore_version["']/);
+  assert.doesNotMatch(publisher, /["']trash_version["']|["']restore_version["']/);
+  assert.doesNotMatch(script, /versionNumber: prototype\.versionNumber/);
+
+  assert.equal(DEFAULT_PUBLISHER_TOOLS.trash, "trash_prototype");
+  assert.equal(DEFAULT_PUBLISHER_TOOLS.restore, "restore_prototype");
+  assert.equal(DEFAULT_PUBLISHER_TOOLS.list, "list_prototypes");
+  assert.equal(Object.hasOwn(DEFAULT_PUBLISHER_TOOLS, "trashVersion"), false);
+  assert.equal(Object.hasOwn(DEFAULT_PUBLISHER_TOOLS, "restoreVersion"), false);
+
+  assert.match(script, /canUseStaticFallback/);
+  assert.match(script, /error instanceof TypeError/);
+  assert.match(publisher, /__UIPLAYGROUND_PUBLISHER_ACCESS_TOKEN__/);
+  assert.match(publisher, /DEV harness|DEV ONLY|fromDevHarness/i);
+  assert.match(readme, /DEV harness/);
+  assert.match(readme, /OAuth — ei toteutettu|ei toteutettu tällä sivustolla/i);
+
+  assert.match(viewer, /Toista versiota ei avata automaattisesti/);
+  assert.match(viewer, /frame\.removeAttribute\("srcdoc"\)/);
+  assert.doesNotMatch(viewer, /latestVersion|fallback.*version|toinen versio/i);
+
+  assert.deepEqual(
+    parseMcpToolResult({ result: { content: [{ type: "text", text: "{\"ok\":true}" }] } }),
+    { ok: true },
+  );
+});
+
+test("HTTP catalog errors must not use static fallback; only TypeError may", () => {
+  const script = readFileSync(join(ui, "playground.mjs"), "utf8");
+  assert.match(script, /function canUseStaticFallback\(error\) \{\s*return error instanceof TypeError;\s*\}/);
+  assert.match(script, /if \(!canUseStaticFallback\(error\)\)/);
+  assert.match(script, /Prototyyppiluetteloa ei voitu ladata/);
 });
 
 test("viewer keeps generated bundles in a scripts-only sandbox", () => {
