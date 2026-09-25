@@ -451,6 +451,38 @@ test("a second standard is a registry row, not a new tree", () => {
   assert.equal(STUI_EXPERIMENT_STANDARDS.some((item) => item.stuiId === "STUI-90-001"), false);
 });
 
+test("an old transposed baseline stays baseline and is not the same package as the starting model", () => {
+  const old = readJson(join(ui, "tests/fixtures/stui-20-002-playground-return.json"));
+  const parsed = readStudioPlaygroundExport(old);
+  assert.equal(parsed.pkg.modelVersion, "baseline");
+  assert.equal(parsed.pkg.lineage.source, "studio-baseline");
+  assert.equal(parsed.pkg.lineage.basedOnModelVersion, null);
+  assert.equal(parsed.pkg.behavior.transpose, true);
+  const kept = withTranspose(parsed.bundle, true);
+  assert.equal(kept.stuiExperiment.modelVersion, "baseline");
+  assert.equal(kept.stuiExperiment.lineage.source, "studio-baseline");
+  const start = {
+    ...parsed.pkg,
+    behavior: { ...parsed.pkg.behavior, transpose: false },
+  };
+  const startBundle = {
+    ...parsed.bundle,
+    stuiExperiment: start,
+    html: String(parsed.bundle.html).replace(
+      /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,
+      `$1${JSON.stringify(start)}$2`,
+    ),
+  };
+  const first = rememberImportedBundle({ entries: [] }, startBundle);
+  const second = rememberImportedBundle(first.library, parsed.bundle);
+  assert.equal(first.duplicate, false);
+  assert.equal(second.duplicate, false);
+  assert.notEqual(first.id, second.id);
+  const again = rememberImportedBundle(second.library, parsed.bundle);
+  assert.equal(again.duplicate, true);
+  assert.equal(again.library.entries.length, 2);
+});
+
 test("a broken fixture does not pretend to be a course matrix", () => {
   const matrix = buildCourseMatrix({ course: { id: "x" } });
   assert.equal(matrix.ok, false);
