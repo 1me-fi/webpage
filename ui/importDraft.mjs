@@ -1,6 +1,8 @@
+import { findStuiExperimentStandard, STUI_EXPERIMENT_STANDARDS } from "./stuiExperimentRegistry.mjs";
+
 export const IMPORT_DRAFT_KEY = "1me.playground.stuiImportDraft.v1";
 export const IMPORT_LIBRARY_KEY = "1me.playground.stuiImportLibrary.v1";
-const MODEL_KEY = "studio/lists/studio-configurable-table-v1";
+export { STUI_EXPERIMENT_STANDARDS };
 
 function markerPackage(html) {
   if (typeof html !== "string") return null;
@@ -18,7 +20,7 @@ export function hierarchyFromModelKey(modelKey) {
 }
 
 /** Validate a Studio Playground export. Does not publish a backend version. */
-export function readStudioPlaygroundExport(raw) {
+export function readStudioPlaygroundExport(raw, standards = STUI_EXPERIMENT_STANDARDS) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw) || raw.schemaVersion !== 1) {
     throw new Error("Tiedosto ei ole Playground-vienti (schemaVersion 1).");
   }
@@ -35,8 +37,13 @@ export function readStudioPlaygroundExport(raw) {
   }
   const pkg = fromField || fromHtml;
   if (!pkg || pkg.packageVersion !== 1) throw new Error("Tuntematon packageVersion.");
-  if (pkg.stuiId !== "STUI-20-002") throw new Error("Vain STUI-20-002 voidaan tuoda tässä pilotissa.");
-  if (pkg.modelKey !== MODEL_KEY) throw new Error(`modelKey ei ole ${MODEL_KEY}.`);
+  const standard = findStuiExperimentStandard(pkg.stuiId, standards);
+  if (!standard) {
+    throw new Error(`Standardia ${pkg.stuiId} ei ole rekisteröity Playground-kokeiluun.`);
+  }
+  if (pkg.modelKey !== standard.modelKey) {
+    throw new Error(`modelKey ei vastaa rekisteröityä standardia ${standard.stuiId}.`);
+  }
   if (!pkg.behavior || typeof pkg.behavior.transpose !== "boolean") {
     throw new Error("Paketin behavior.transpose puuttuu.");
   }
@@ -108,11 +115,11 @@ export function rememberImportedBundle(library, bundle) {
 }
 
 /** One STUI id once. Versions sit under an alternative, not as sibling standards. */
-export function buildStuiModelTree(library) {
+export function buildStuiModelTree(library, standards = STUI_EXPERIMENT_STANDARDS) {
   const families = [];
   const familyIndex = new Map();
   for (const entry of library?.entries || []) {
-    const { pkg } = readStudioPlaygroundExport(entry.bundle);
+    const { pkg } = readStudioPlaygroundExport(entry.bundle, standards);
     const familyId = stuiFamilyId(pkg.stuiId);
     let family = familyIndex.get(familyId);
     if (!family) {

@@ -9,6 +9,7 @@ import {
   hierarchyFromModelKey,
   readStudioPlaygroundExport,
   rememberImportedBundle,
+  STUI_EXPERIMENT_STANDARDS,
   stuiFamilyId,
   withTranspose,
 } from "../importDraft.mjs";
@@ -313,7 +314,10 @@ test("studio export import keeps the modelKey hierarchy and rejects a foreign ST
   assert.equal(flipped.stuiExperiment.stuiId, "STUI-20-002");
   assert.match(flipped.html, /"transpose":true/);
   assert.match(flipped.html, /"id":"r1"/);
-  assert.throws(() => readStudioPlaygroundExport({ schemaVersion: 1, stuiExperiment: { ...pkg, stuiId: "STUI-1" } }), /STUI-20-002/);
+  assert.throws(
+    () => readStudioPlaygroundExport({ schemaVersion: 1, stuiExperiment: { ...pkg, stuiId: "STUI-1" } }),
+    /Standardia STUI-1 ei ole rekisteröity/,
+  );
   assert.match(readFileSync(join(ui, "index.html"), "utf8"), /Tuo Playground-paketti/);
 });
 
@@ -388,6 +392,41 @@ test("owner return package keeps schemaVersion apart from the model version", ()
   const place = buildStuiModelTree({ entries: [{ id: "owner", bundle: parsed.bundle }] });
   assert.equal(place[0].standards[0].alternatives[0].id, "baseline");
   assert.equal(place[0].standards[0].alternatives[0].versions[0].label, "v1");
+});
+
+test("a second standard is a registry row, not a new tree", () => {
+  assert.deepEqual(STUI_EXPERIMENT_STANDARDS.map((item) => item.stuiId), ["STUI-20-002"]);
+  const extra = {
+    stuiId: "STUI-90-001",
+    standardName: "Koe",
+    modelKey: "studio/lists/studio-configurable-table-v1",
+    capabilities: ["sectionToggle"],
+    presentationKeys: ["hiddenColumnIds"],
+    behaviorKeys: ["transpose", "sections"],
+  };
+  const pkg = {
+    packageVersion: 1,
+    stuiId: "STUI-90-001",
+    modelKey: extra.modelKey,
+    modelVersion: "v1",
+    lineage: { source: "studio-baseline", basedOnModelVersion: null, basedOnContentHash: null },
+    behavior: { transpose: false, sections: [] },
+  };
+  const bundle = {
+    schemaVersion: 1,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(pkg)}</script>`,
+    css: "",
+    js: "",
+    stuiExperiment: pkg,
+  };
+  assert.throws(() => readStudioPlaygroundExport(bundle), /ei ole rekisteröity/);
+  const tree = buildStuiModelTree(
+    { entries: [{ id: "extra", bundle }] },
+    [...STUI_EXPERIMENT_STANDARDS, extra],
+  );
+  assert.equal(tree[0].id, "STUI-90");
+  assert.equal(tree[0].standards[0].id, "STUI-90-001");
+  assert.equal(STUI_EXPERIMENT_STANDARDS.some((item) => item.stuiId === "STUI-90-001"), false);
 });
 
 test("a broken fixture does not pretend to be a course matrix", () => {
