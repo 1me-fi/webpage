@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "html": "<div id=\"stui-experiment-root\"></div><script type=\"application/json\" id=\"stui-experiment-package\">{\"packageVersion\":1,\"stuiId\":\"STUI-20-002\",\"modelKey\":\"studio/lists/studio-configurable-table-v1\",\"modelId\":\"stui-20-002-pilot\",\"modelVersion\":\"baseline-af17fc85\",\"lineage\":{\"source\":\"studio-export\",\"basedOnModelVersion\":\"baseline\",\"basedOnContentHash\":\"99676246\"},\"capabilities\":[\"sectionToggle\",\"transpose\"],\"presentation\":{\"hiddenColumnIds\":[]},\"behavior\":{\"transpose\":true,\"sections\":[{\"id\":\"summary\",\"label\":\"Yhteenveto\",\"visible\":true}]},\"dataContract\":{\"rowIdField\":\"id\",\"columns\":[{\"id\":\"unit\",\"label\":\"Asunto\",\"role\":\"primary\"},{\"id\":\"type\",\"label\":\"Tyyppi\",\"role\":\"data\"},{\"id\":\"area\",\"label\":\"Pinta-ala\",\"role\":\"data\"},{\"id\":\"status\",\"label\":\"Tila\",\"role\":\"status\"}]},\"fixture\":{\"kind\":\"synthetic\",\"rows\":[{\"id\":\"r1\",\"values\":{\"unit\":\"A1\",\"type\":\"2h+k\",\"area\":\"54,5 m²\",\"status\":\"Valmis\"}},{\"id\":\"r2\",\"values\":{\"unit\":\"A2\",\"type\":\"1h+k\",\"area\":\"32,0 m²\",\"status\":\"Kesken\"}},{\"id\":\"r3\",\"values\":{\"unit\":\"A3\",\"type\":\"3h+k\",\"area\":\"72,0 m²\",\"status\":\"Passivoitu\"}}]}}</script>",
+  "css": "table{border-collapse:collapse}td,th{border:1px solid #999;padding:4px}",
+  "js": "(() => {\n  const marker = document.getElementById(\"stui-experiment-package\");\n  const pkg = marker ? JSON.parse(marker.textContent || \"{}\") : null;\n  const root = document.getElementById(\"stui-experiment-root\");\n  if (!pkg || !root) return;\n  const state = { transpose: Boolean(pkg.behavior && pkg.behavior.transpose), hidden: {} };\n  (pkg.behavior.sections || []).forEach((section) => { state.hidden[section.id] = section.visible === false; });\n  function render() {\n    const columns = (pkg.dataContract.columns || []).filter((column) => !(pkg.presentation.hiddenColumnIds || []).includes(column.id));\n    const rows = pkg.fixture.rows || [];\n    const sections = (pkg.behavior.sections || []).map((section) => {\n      const hidden = state.hidden[section.id] === true;\n      return '<section data-section-id=\"' + section.id + '\" data-hidden=\"' + hidden + '\"><button type=\"button\" data-toggle=\"' + section.id + '\">' + (hidden ? \"Näytä\" : \"Piilota\") + \" \" + section.label + '</button>' + (hidden ? \"\" : \"<p>\" + section.label + \"</p>\") + \"</section>\";\n    }).join(\"\");\n    const head = state.transpose\n      ? \"<tr><th>Sarake</th>\" + rows.map((row) => \"<th data-row-id='\" + row.id + \"'>\" + row.id + \"</th>\").join(\"\") + \"</tr>\"\n      : \"<tr>\" + columns.map((column) => \"<th data-column-id='\" + column.id + \"'>\" + column.label + \"</th>\").join(\"\") + \"</tr>\";\n    const body = state.transpose\n      ? columns.map((column) => \"<tr data-column-id='\" + column.id + \"'><th>\" + column.label + \"</th>\" + rows.map((row) => \"<td data-row-id='\" + row.id + \"' data-column-id='\" + column.id + \"'>\" + (row.values[column.id] || \"\") + \"</td>\").join(\"\") + \"</tr>\").join(\"\")\n      : rows.map((row) => \"<tr data-row-id='\" + row.id + \"'>\" + columns.map((column) => \"<td data-column-id='\" + column.id + \"'>\" + (row.values[column.id] || \"\") + \"</td>\").join(\"\") + \"</tr>\").join(\"\");\n    root.innerHTML = '<p data-stui-id=\"' + pkg.stuiId + '\" data-model-version=\"' + pkg.modelVersion + '\">' + pkg.stuiId + \" \" + pkg.modelVersion + '</p>' + sections + '<button type=\"button\" id=\"transpose\">Transponoi</button><table>' + head + body + \"</table>\";\n    root.querySelectorAll(\"[data-toggle]\").forEach((button) => {\n      button.addEventListener(\"click\", () => {\n        const id = button.getAttribute(\"data-toggle\");\n        state.hidden[id] = !state.hidden[id];\n        render();\n      });\n    });\n    const transpose = root.querySelector(\"#transpose\");\n    if (transpose) transpose.addEventListener(\"click\", () => { state.transpose = !state.transpose; render(); });\n  }\n  render();\n})();",
+  "stuiExperiment": {
+    "packageVersion": 1,
+    "stuiId": "STUI-20-002",
+    "modelKey": "studio/lists/studio-configurable-table-v1",
+    "modelId": "stui-20-002-pilot",
+    "modelVersion": "baseline-af17fc85",
+    "lineage": {
+      "source": "studio-export",
+      "basedOnModelVersion": "baseline",
+      "basedOnContentHash": "99676246"
+    },
+    "capabilities": [
+      "sectionToggle",
+      "transpose"
+    ],
+    "presentation": {
+      "hiddenColumnIds": []
+    },
+    "behavior": {
+      "transpose": true,
+      "sections": [
+        {
+          "id": "summary",
+          "label": "Yhteenveto",
+          "visible": true
+        }
+      ]
+    },
+    "dataContract": {
+      "rowIdField": "id",
+      "columns": [
+        {
+          "id": "unit",
+          "label": "Asunto",
+          "role": "primary"
+        },
+        {
+          "id": "type",
+          "label": "Tyyppi",
+          "role": "data"
+        },
+        {
+          "id": "area",
+          "label": "Pinta-ala",
+          "role": "data"
+        },
+        {
+          "id": "status",
+          "label": "Tila",
+          "role": "status"
+        }
+      ]
+    },
+    "fixture": {
+      "kind": "synthetic",
+      "rows": [
+        {
+          "id": "r1",
+          "values": {
+            "unit": "A1",
+            "type": "2h+k",
+            "area": "54,5 m²",
+            "status": "Valmis"
+          }
+        },
+        {
+          "id": "r2",
+          "values": {
+            "unit": "A2",
+            "type": "1h+k",
+            "area": "32,0 m²",
+            "status": "Kesken"
+          }
+        },
+        {
+          "id": "r3",
+          "values": {
+            "unit": "A3",
+            "type": "3h+k",
+            "area": "72,0 m²",
+            "status": "Passivoitu"
+          }
+        }
+      ]
+    }
+  }
+}

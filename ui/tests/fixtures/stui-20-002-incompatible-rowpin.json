@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "html": "<div id=\"stui-experiment-root\"></div><script type=\"application/json\" id=\"stui-experiment-package\">{\"packageVersion\":1,\"stuiId\":\"STUI-20-002\",\"modelKey\":\"studio/lists/studio-configurable-table-v1\",\"modelId\":\"stui-20-002-pilot\",\"modelVersion\":\"baseline\",\"lineage\":{\"source\":\"studio-baseline\",\"basedOnModelVersion\":null,\"basedOnContentHash\":null},\"capabilities\":[\"sectionToggle\",\"transpose\"],\"presentation\":{\"hiddenColumnIds\":[]},\"behavior\":{\"transpose\":false,\"sections\":[{\"id\":\"summary\",\"label\":\"Yhteenveto\",\"visible\":true}],\"rowPin\":true},\"dataContract\":{\"rowIdField\":\"id\",\"columns\":[{\"id\":\"unit\",\"label\":\"Asunto\",\"role\":\"primary\"},{\"id\":\"type\",\"label\":\"Tyyppi\",\"role\":\"data\"},{\"id\":\"area\",\"label\":\"Pinta-ala\",\"role\":\"data\"},{\"id\":\"status\",\"label\":\"Tila\",\"role\":\"status\"}]},\"fixture\":{\"kind\":\"synthetic\",\"rows\":[{\"id\":\"r1\",\"values\":{\"unit\":\"A1\",\"type\":\"2h+k\",\"area\":\"54,5 m²\",\"status\":\"Valmis\"}},{\"id\":\"r2\",\"values\":{\"unit\":\"A2\",\"type\":\"1h+k\",\"area\":\"32,0 m²\",\"status\":\"Kesken\"}},{\"id\":\"r3\",\"values\":{\"unit\":\"A3\",\"type\":\"3h+k\",\"area\":\"72,0 m²\",\"status\":\"Passivoitu\"}}]}}</script>",
+  "css": "",
+  "js": "",
+  "stuiExperiment": {
+    "packageVersion": 1,
+    "stuiId": "STUI-20-002",
+    "modelKey": "studio/lists/studio-configurable-table-v1",
+    "modelId": "stui-20-002-pilot",
+    "modelVersion": "baseline",
+    "lineage": {
+      "source": "studio-baseline",
+      "basedOnModelVersion": null,
+      "basedOnContentHash": null
+    },
+    "capabilities": [
+      "sectionToggle",
+      "transpose"
+    ],
+    "presentation": {
+      "hiddenColumnIds": []
+    },
+    "behavior": {
+      "transpose": false,
+      "sections": [
+        {
+          "id": "summary",
+          "label": "Yhteenveto",
+          "visible": true
+        }
+      ],
+      "rowPin": true
+    },
+    "dataContract": {
+      "rowIdField": "id",
+      "columns": [
+        {
+          "id": "unit",
+          "label": "Asunto",
+          "role": "primary"
+        },
+        {
+          "id": "type",
+          "label": "Tyyppi",
+          "role": "data"
+        },
+        {
+          "id": "area",
+          "label": "Pinta-ala",
+          "role": "data"
+        },
+        {
+          "id": "status",
+          "label": "Tila",
+          "role": "status"
+        }
+      ]
+    },
+    "fixture": {
+      "kind": "synthetic",
+      "rows": [
+        {
+          "id": "r1",
+          "values": {
+            "unit": "A1",
+            "type": "2h+k",
+            "area": "54,5 m²",
+            "status": "Valmis"
+          }
+        },
+        {
+          "id": "r2",
+          "values": {
+            "unit": "A2",
+            "type": "1h+k",
+            "area": "32,0 m²",
+            "status": "Kesken"
+          }
+        },
+        {
+          "id": "r3",
+          "values": {
+            "unit": "A3",
+            "type": "3h+k",
+            "area": "72,0 m²",
+            "status": "Passivoitu"
+          }
+        }
+      ]
+    }
+  }
+}
