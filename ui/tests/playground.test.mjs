@@ -374,6 +374,22 @@ test("STUI-20-002 appears once, with alternatives and versions underneath", () =
   assert.equal(alternatives[1].versions[0].label, "v1");
 });
 
+test("owner return package keeps schemaVersion apart from the model version", () => {
+  const bundle = readJson(join(ui, "tests/fixtures/stui-20-002-playground-return.json"));
+  const parsed = readStudioPlaygroundExport(bundle);
+  assert.equal(bundle.schemaVersion, 1);
+  assert.equal(parsed.pkg.packageVersion, 1);
+  assert.equal(parsed.pkg.stuiId, "STUI-20-002");
+  assert.equal(parsed.pkg.modelVersion, "baseline");
+  assert.notEqual(String(bundle.schemaVersion), parsed.pkg.modelVersion);
+  assert.equal(parsed.pkg.behavior.transpose, true);
+  assert.equal(parsed.pkg.fixture.rows[0].id, "r1");
+  assert.equal(parsed.pkg.fixture.rows[0].values.unit, "A1");
+  const place = buildStuiModelTree({ entries: [{ id: "owner", bundle: parsed.bundle }] });
+  assert.equal(place[0].standards[0].alternatives[0].id, "baseline");
+  assert.equal(place[0].standards[0].alternatives[0].versions[0].label, "v1");
+});
+
 test("a broken fixture does not pretend to be a course matrix", () => {
   const matrix = buildCourseMatrix({ course: { id: "x" } });
   assert.equal(matrix.ok, false);
