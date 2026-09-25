@@ -55,11 +55,44 @@ export function readStudioPlaygroundExport(raw, standards = STUI_EXPERIMENT_STAN
   };
 }
 
+function revisionToken(value) {
+  const text = JSON.stringify(value);
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+/** Same rule as Studio editedExportModelVersion. baseline packages are not rewritten here. */
+export function editedExportModelVersion(pkg, behavior) {
+  const token = revisionToken({
+    behavior,
+    presentation: pkg.presentation ?? null,
+    fixture: pkg.fixture ?? null,
+    dataContract: pkg.dataContract ?? null,
+  });
+  const stem = String(pkg.modelVersion || "baseline").replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 48);
+  return `${stem}-${token}`.slice(0, 80);
+}
+
 export function withTranspose(bundle, transpose) {
-  const pkg = {
-    ...bundle.stuiExperiment,
-    behavior: { ...bundle.stuiExperiment.behavior, transpose: Boolean(transpose) },
-  };
+  const current = bundle.stuiExperiment;
+  const behavior = { ...current.behavior, transpose: Boolean(transpose) };
+  const unchanged = current.behavior?.transpose === behavior.transpose;
+  const pkg = unchanged
+    ? current
+    : {
+        ...current,
+        behavior,
+        modelVersion: editedExportModelVersion(current, behavior),
+        lineage: {
+          source: "studio-export",
+          basedOnModelVersion: current.modelVersion || "baseline",
+          basedOnContentHash: packageFingerprint(current),
+        },
+      };
   const json = JSON.stringify(pkg).replace(/</g, "\\u003c");
   const html = String(bundle.html || "").replace(
     /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,

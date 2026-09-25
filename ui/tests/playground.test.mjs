@@ -7,12 +7,14 @@ import { filterCatalog, isTrashedCatalogEntry, parsePrototypeCatalog, sortCatalo
 import {
   buildStuiModelTree,
   hierarchyFromModelKey,
+  placementForPackage,
   readStudioPlaygroundExport,
   rememberImportedBundle,
   STUI_EXPERIMENT_STANDARDS,
   stuiFamilyId,
   withTranspose,
 } from "../importDraft.mjs";
+import { findStuiExperimentStandard } from "../stuiExperimentRegistry.mjs";
 import { DEFAULT_PUBLISHER_TOOLS, parseMcpToolResult } from "../publisher.mjs";
 import { assertCanonicalFixture, buildCourseMatrix } from "../fixtureView.mjs";
 
@@ -312,6 +314,24 @@ test("studio export import keeps the modelKey hierarchy and rejects a foreign ST
   assert.equal(flipped.stuiExperiment.fixture.rows[0].id, "r1");
   assert.equal(flipped.stuiExperiment.fixture.rows[0].values.unit, "A1");
   assert.equal(flipped.stuiExperiment.stuiId, "STUI-20-002");
+  assert.notEqual(flipped.stuiExperiment.modelVersion, "baseline");
+  assert.equal(flipped.stuiExperiment.lineage.source, "studio-export");
+  assert.equal(flipped.stuiExperiment.lineage.basedOnModelVersion, "baseline");
+  assert.equal(placementForPackage(flipped.stuiExperiment).alternative, "baseline");
+  assert.equal(placementForPackage(flipped.stuiExperiment).version, flipped.stuiExperiment.modelVersion);
+  const otherRows = {
+    ...withRow,
+    stuiExperiment: {
+      ...withRow.stuiExperiment,
+      fixture: { kind: "synthetic", rows: [{ id: "r9", values: { unit: "Z9" } }] },
+    },
+  };
+  otherRows.html = otherRows.html.replace(
+    /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,
+    `$1${JSON.stringify(otherRows.stuiExperiment)}$2`,
+  );
+  const other = withTranspose(readStudioPlaygroundExport(otherRows).bundle, true);
+  assert.notEqual(other.stuiExperiment.modelVersion, flipped.stuiExperiment.modelVersion);
   assert.match(flipped.html, /"transpose":true/);
   assert.match(flipped.html, /"id":"r1"/);
   assert.throws(
@@ -419,6 +439,8 @@ test("a second standard is a registry row, not a new tree", () => {
     js: "",
     stuiExperiment: pkg,
   };
+  assert.equal(findStuiExperimentStandard("STUI-90-001"), null);
+  assert.equal(findStuiExperimentStandard("STUI-90-001", [extra])?.stuiId, "STUI-90-001");
   assert.throws(() => readStudioPlaygroundExport(bundle), /ei ole rekisteröity/);
   const tree = buildStuiModelTree(
     { entries: [{ id: "extra", bundle }] },
