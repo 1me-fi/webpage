@@ -9,6 +9,7 @@ import {
   publisherOperationId,
   publisherSessionFromWindow,
 } from "./publisher.mjs";
+import { IMPORT_DRAFT_KEY, readStudioPlaygroundExport } from "./importDraft.mjs";
 
 const status = document.querySelector("#catalog-status");
 const table = document.querySelector("#catalog");
@@ -214,7 +215,71 @@ async function handlePublisherAction(event, state) {
   }
 }
 
+function renderImportHierarchy(draft) {
+  const root = document.querySelector("#import-hierarchy");
+  const status = document.querySelector("#import-status");
+  if (!root) return;
+  root.replaceChildren();
+  if (!draft) return;
+  const { hierarchy, pkg } = readStudioPlaygroundExport(draft);
+  const tree = document.createElement("ol");
+  tree.className = "import-tree";
+  const area = document.createElement("li");
+  area.textContent = hierarchy.area;
+  const groupList = document.createElement("ol");
+  const group = document.createElement("li");
+  group.textContent = hierarchy.group;
+  const modelList = document.createElement("ol");
+  const model = document.createElement("li");
+  model.textContent = hierarchy.model;
+  const link = document.createElement("a");
+  link.href = "view.html?draft=1";
+  link.textContent = `Avaa ${pkg.modelVersion} (tuotu luonnos, ei julkaistu versio)`;
+  model.append(document.createElement("br"), link);
+  modelList.append(model);
+  group.append(modelList);
+  groupList.append(group);
+  area.append(groupList);
+  tree.append(area);
+  root.append(tree);
+  if (status) status.textContent = "Paketti on kirjaston kohdassa studio / lists / studio-configurable-table-v1. Sitä ei ole julkaistu.";
+}
+
+function bindImport() {
+  const button = document.querySelector("#import-package");
+  const input = document.querySelector("#import-file");
+  const status = document.querySelector("#import-status");
+  if (!button || !input) return;
+  button.addEventListener("click", () => input.click());
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        const draft = readStudioPlaygroundExport(parsed);
+        sessionStorage.setItem(IMPORT_DRAFT_KEY, JSON.stringify(draft.bundle));
+        renderImportHierarchy(draft.bundle);
+      } catch (error) {
+        sessionStorage.removeItem(IMPORT_DRAFT_KEY);
+        renderImportHierarchy(null);
+        if (status) status.textContent = error instanceof Error ? error.message : "Tuonti epäonnistui.";
+      }
+    };
+    reader.readAsText(file);
+  });
+  try {
+    const saved = sessionStorage.getItem(IMPORT_DRAFT_KEY);
+    if (saved) renderImportHierarchy(JSON.parse(saved));
+  } catch {
+    sessionStorage.removeItem(IMPORT_DRAFT_KEY);
+  }
+}
+
 async function main() {
+  bindImport();
   let catalog;
   let source = "API";
   try {

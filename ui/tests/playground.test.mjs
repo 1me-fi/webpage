@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { filterCatalog, isTrashedCatalogEntry, parsePrototypeCatalog, sortCatalog } from "../catalog.mjs";
+import { hierarchyFromModelKey, readStudioPlaygroundExport, withTranspose } from "../importDraft.mjs";
 import { DEFAULT_PUBLISHER_TOOLS, parseMcpToolResult } from "../publisher.mjs";
 import { assertCanonicalFixture, buildCourseMatrix } from "../fixtureView.mjs";
 
@@ -264,6 +265,34 @@ test("LMS fixture follows the canonical course graph and builds a matrix", () =>
   const firstDay = matrix.modules[0].days[0];
   assert.ok(firstDay.items.some((item) => item.kind === "material" && item.body.length > 0));
   assert.ok(matrix.modules[1].days[0].items.some((item) => item.kind === "exam" && item.questions.length === 2));
+});
+
+test("studio export import keeps the modelKey hierarchy and rejects a foreign STUI", () => {
+  const pkg = {
+    packageVersion: 1,
+    stuiId: "STUI-20-002",
+    modelKey: "studio/lists/studio-configurable-table-v1",
+    modelVersion: "baseline",
+    behavior: { transpose: false, sections: [] },
+  };
+  const bundle = {
+    schemaVersion: 1,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(pkg)}</script>`,
+    css: "",
+    js: "",
+    stuiExperiment: pkg,
+  };
+  const imported = readStudioPlaygroundExport(bundle);
+  assert.deepEqual(hierarchyFromModelKey(imported.pkg.modelKey), {
+    area: "studio",
+    group: "lists",
+    model: "studio-configurable-table-v1",
+  });
+  const flipped = withTranspose(imported.bundle, true);
+  assert.equal(flipped.stuiExperiment.behavior.transpose, true);
+  assert.match(flipped.html, /"transpose":true/);
+  assert.throws(() => readStudioPlaygroundExport({ schemaVersion: 1, stuiExperiment: { ...pkg, stuiId: "STUI-1" } }), /STUI-20-002/);
+  assert.match(readFileSync(join(ui, "index.html"), "utf8"), /Tuo Playground-paketti/);
 });
 
 test("a broken fixture does not pretend to be a course matrix", () => {

@@ -1,3 +1,4 @@
+import { IMPORT_DRAFT_KEY, readStudioPlaygroundExport, withTranspose } from "./importDraft.mjs";
 import { sandboxBundle } from "./sandboxBundle.mjs";
 
 const DEFAULT_API_BASE = "https://europe-west1-oneme-dev.cloudfunctions.net/uiPlaygroundPublicHttp";
@@ -26,8 +27,45 @@ async function loadFixture(fixtureRef) {
   return response.json();
 }
 
+function showDraft(bundle) {
+  const parsed = readStudioPlaygroundExport(bundle);
+  name.textContent = parsed.pkg.stuiId;
+  meta.textContent = `${parsed.hierarchy.area} / ${parsed.hierarchy.group} / ${parsed.hierarchy.model} · ${parsed.pkg.modelVersion} · tuotu luonnos`;
+  frame.srcdoc = sandboxBundle(bundle, null);
+  status.textContent = parsed.pkg.behavior.transpose
+    ? "Transponointi on päällä. Prototyyppi suoritetaan eristetyssä iframe-kehyksessä."
+    : "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.";
+  const editor = document.querySelector("#draft-editor");
+  if (editor) editor.hidden = false;
+  document.querySelector("#draft-transpose")?.addEventListener("click", () => {
+    const next = withTranspose(bundle, !parsed.pkg.behavior.transpose);
+    sessionStorage.setItem(IMPORT_DRAFT_KEY, JSON.stringify(next));
+    showDraft(next);
+  }, { once: true });
+  document.querySelector("#draft-export")?.addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `stui-20-002-${parsed.pkg.modelVersion}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, { once: true });
+}
+
 async function main() {
   const params = new URLSearchParams(window.location.search);
+  if (params.get("draft") === "1") {
+    try {
+      const saved = sessionStorage.getItem(IMPORT_DRAFT_KEY);
+      if (!saved) throw new Error("Tuotua luonnosta ei ole.");
+      showDraft(JSON.parse(saved));
+    } catch (error) {
+      name.textContent = "Tuonti puuttuu";
+      status.textContent = error instanceof Error ? error.message : "Tuotua luonnosta ei voitu avata.";
+    }
+    return;
+  }
   const prototypeId = params.get("prototypeId");
   const version = params.get("version");
   if (!prototypeId || !version) {

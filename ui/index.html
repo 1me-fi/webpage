@@ -37,6 +37,13 @@
       <button id="close-trash" type="button" hidden>Takaisin luetteloon</button>
     </div>
     <p id="publisher-status" class="status" role="status" hidden></p>
+    <section id="import-panel" aria-label="Playground-tuonti">
+      <h2>Kirjasto</h2>
+      <button id="import-package" type="button">Tuo Playground-paketti</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden />
+      <p id="import-status" class="status" role="status"></p>
+      <div id="import-hierarchy"></div>
+    </section>
     <p id="catalog-status" class="status" role="status">Ladataan prototyyppejä…</p>
     <div class="catalog-scroll">
       <table id="catalog" class="catalog">
@@ -57,6 +64,6 @@
     </div>
   </main>
 
-  <script type="module" src="playground.mjs?v=20260924-library-final"></script>
+  <script type="module" src="playground.mjs?v=20260925-import"></script>
 </body>
 </html>
