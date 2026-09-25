@@ -9,6 +9,14 @@ import {
   publisherOperationId,
   publisherSessionFromWindow,
 } from "./publisher.mjs";
+import {
+  IMPORT_DRAFT_KEY,
+  IMPORT_LIBRARY_KEY,
+  buildStuiModelTree,
+  emptyImportLibrary,
+  readStudioPlaygroundExport,
+  rememberImportedBundle,
+} from "./importDraft.mjs";
 
 const status = document.querySelector("#catalog-status");
 const table = document.querySelector("#catalog");
@@ -214,7 +222,99 @@ async function handlePublisherAction(event, state) {
   }
 }
 
+function loadImportLibrary() {
+  try {
+    const raw = sessionStorage.getItem(IMPORT_LIBRARY_KEY);
+    const parsed = raw ? JSON.parse(raw) : emptyImportLibrary();
+    return parsed && Array.isArray(parsed.entries) ? parsed : emptyImportLibrary();
+  } catch {
+    return emptyImportLibrary();
+  }
+}
+
+function appendVersion(parent, version) {
+  const item = document.createElement("li");
+  const label = version.label === version.modelVersion ? version.label : `${version.label} · ${version.modelVersion}`;
+  item.textContent = label;
+  const link = document.createElement("a");
+  link.href = `view.html?draft=1&entry=${encodeURIComponent(version.id)}`;
+  link.textContent = `Avaa ${label} (tuotu luonnos, ei julkaistu versio)`;
+  item.append(document.createElement("br"), link);
+  parent.append(item);
+}
+
+function renderImportHierarchy(library) {
+  const root = document.querySelector("#import-hierarchy");
+  const status = document.querySelector("#import-status");
+  if (!root) return;
+  root.replaceChildren();
+  const treeData = buildStuiModelTree(library);
+  if (treeData.length === 0) return;
+  const tree = document.createElement("ol");
+  tree.className = "import-tree";
+  for (const family of treeData) {
+    const familyItem = document.createElement("li");
+    familyItem.textContent = family.id;
+    const standards = document.createElement("ol");
+    for (const standard of family.standards) {
+      const standardItem = document.createElement("li");
+      standardItem.textContent = standard.id;
+      const alternatives = document.createElement("ol");
+      for (const alternative of standard.alternatives) {
+        const alternativeItem = document.createElement("li");
+        alternativeItem.textContent = alternative.id;
+        const versions = document.createElement("ol");
+        for (const version of alternative.versions) appendVersion(versions, version);
+        alternativeItem.append(versions);
+        alternatives.append(alternativeItem);
+      }
+      standardItem.append(alternatives);
+      standards.append(standardItem);
+    }
+    familyItem.append(standards);
+    tree.append(familyItem);
+  }
+  root.append(tree);
+  if (status) {
+    status.textContent = "STUI-20 näkyy kerran ja STUI-20-002 sen alla. Vaihtoehdot ja versiot eivät ole omia standardeja. Luonnoksia ei ole julkaistu.";
+  }
+}
+
+function bindImport() {
+  const button = document.querySelector("#import-package");
+  const input = document.querySelector("#import-file");
+  const status = document.querySelector("#import-status");
+  if (!button || !input) return;
+  button.addEventListener("click", () => input.click());
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        const draft = readStudioPlaygroundExport(parsed);
+        const remembered = rememberImportedBundle(loadImportLibrary(), draft.bundle);
+        sessionStorage.setItem(IMPORT_LIBRARY_KEY, JSON.stringify(remembered.library));
+        sessionStorage.setItem(IMPORT_DRAFT_KEY, JSON.stringify(draft.bundle));
+        renderImportHierarchy(remembered.library);
+      } catch (error) {
+        renderImportHierarchy(loadImportLibrary());
+        if (status) status.textContent = error instanceof Error ? error.message : "Tuonti epäonnistui.";
+      }
+    };
+    reader.readAsText(file);
+  });
+  try {
+    renderImportHierarchy(loadImportLibrary());
+  } catch {
+    sessionStorage.removeItem(IMPORT_DRAFT_KEY);
+  }
+}
+
 async function main() {
+  bindImport();
   let catalog;
   let source = "API";
   try {

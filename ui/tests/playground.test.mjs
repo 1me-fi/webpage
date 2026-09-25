@@ -4,6 +4,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { filterCatalog, isTrashedCatalogEntry, parsePrototypeCatalog, sortCatalog } from "../catalog.mjs";
+import {
+  buildStuiModelTree,
+  hierarchyFromModelKey,
+  readStudioPlaygroundExport,
+  rememberImportedBundle,
+  stuiFamilyId,
+  withTranspose,
+} from "../importDraft.mjs";
 import { DEFAULT_PUBLISHER_TOOLS, parseMcpToolResult } from "../publisher.mjs";
 import { assertCanonicalFixture, buildCourseMatrix } from "../fixtureView.mjs";
 
@@ -264,6 +272,122 @@ test("LMS fixture follows the canonical course graph and builds a matrix", () =>
   const firstDay = matrix.modules[0].days[0];
   assert.ok(firstDay.items.some((item) => item.kind === "material" && item.body.length > 0));
   assert.ok(matrix.modules[1].days[0].items.some((item) => item.kind === "exam" && item.questions.length === 2));
+});
+
+test("studio export import keeps the modelKey hierarchy and rejects a foreign STUI", () => {
+  const pkg = {
+    packageVersion: 1,
+    stuiId: "STUI-20-002",
+    modelKey: "studio/lists/studio-configurable-table-v1",
+    modelVersion: "baseline",
+    behavior: { transpose: false, sections: [] },
+  };
+  const bundle = {
+    schemaVersion: 1,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(pkg)}</script>`,
+    css: "",
+    js: "",
+    stuiExperiment: pkg,
+  };
+  const imported = readStudioPlaygroundExport(bundle);
+  assert.deepEqual(hierarchyFromModelKey(imported.pkg.modelKey), {
+    area: "studio",
+    group: "lists",
+    model: "studio-configurable-table-v1",
+  });
+  const withRow = {
+    ...imported.bundle,
+    stuiExperiment: {
+      ...imported.pkg,
+      fixture: { kind: "synthetic", rows: [{ id: "r1", values: { unit: "A1" } }] },
+    },
+  };
+  withRow.html = withRow.html.replace(
+    /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,
+    `$1${JSON.stringify(withRow.stuiExperiment)}$2`,
+  );
+  const flipped = withTranspose(readStudioPlaygroundExport(withRow).bundle, true);
+  assert.equal(flipped.stuiExperiment.behavior.transpose, true);
+  assert.equal(flipped.stuiExperiment.fixture.rows[0].id, "r1");
+  assert.equal(flipped.stuiExperiment.fixture.rows[0].values.unit, "A1");
+  assert.equal(flipped.stuiExperiment.stuiId, "STUI-20-002");
+  assert.match(flipped.html, /"transpose":true/);
+  assert.match(flipped.html, /"id":"r1"/);
+  assert.throws(() => readStudioPlaygroundExport({ schemaVersion: 1, stuiExperiment: { ...pkg, stuiId: "STUI-1" } }), /STUI-20-002/);
+  assert.match(readFileSync(join(ui, "index.html"), "utf8"), /Tuo Playground-paketti/);
+});
+
+test("STUI-20-002 appears once, with alternatives and versions underneath", () => {
+  const basePkg = {
+    packageVersion: 1,
+    stuiId: "STUI-20-002",
+    modelKey: "studio/lists/studio-configurable-table-v1",
+    modelVersion: "baseline",
+    lineage: { source: "studio-baseline", basedOnModelVersion: null, basedOnContentHash: null },
+    behavior: { transpose: false, sections: [] },
+    fixture: { rows: [{ id: "r1", values: { unit: "A1" } }] },
+  };
+  const base = {
+    schemaVersion: 1,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(basePkg)}</script>`,
+    css: "",
+    js: "",
+    stuiExperiment: basePkg,
+  };
+  const exportedPkg = {
+    ...basePkg,
+    modelVersion: "baseline-columns",
+    behavior: { ...basePkg.behavior, transpose: true },
+    lineage: { source: "studio-export", basedOnModelVersion: "baseline", basedOnContentHash: "abc" },
+  };
+  const exported = {
+    ...base,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(exportedPkg)}</script>`,
+    stuiExperiment: exportedPkg,
+  };
+  const trialPkg = {
+    ...basePkg,
+    modelVersion: "kokeilu A",
+    lineage: { source: "mcp-edit", basedOnModelVersion: "baseline", basedOnContentHash: "def" },
+  };
+  const trial = {
+    ...base,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(trialPkg)}</script>`,
+    stuiExperiment: trialPkg,
+  };
+  let library = { entries: [] };
+  library = rememberImportedBundle(library, base).library;
+  library = rememberImportedBundle(library, base).library;
+  library = rememberImportedBundle(library, exported).library;
+  library = rememberImportedBundle(library, trial).library;
+  assert.equal(library.entries.length, 3);
+  const tree = buildStuiModelTree(library);
+  assert.equal(stuiFamilyId("STUI-20-002"), "STUI-20");
+  assert.equal(tree.length, 1);
+  assert.equal(tree[0].id, "STUI-20");
+  assert.equal(tree[0].standards.length, 1);
+  assert.equal(tree[0].standards[0].id, "STUI-20-002");
+  const alternatives = tree[0].standards[0].alternatives;
+  assert.deepEqual(alternatives.map((item) => item.id), ["baseline", "kokeilu A"]);
+  assert.deepEqual(alternatives[0].versions.map((item) => item.label), ["v1", "baseline-columns"]);
+  assert.equal(alternatives[0].versions[0].stuiId, "STUI-20-002");
+  assert.equal(alternatives[1].versions[0].label, "v1");
+});
+
+test("owner return package keeps schemaVersion apart from the model version", () => {
+  const bundle = readJson(join(ui, "tests/fixtures/stui-20-002-playground-return.json"));
+  const parsed = readStudioPlaygroundExport(bundle);
+  assert.equal(bundle.schemaVersion, 1);
+  assert.equal(parsed.pkg.packageVersion, 1);
+  assert.equal(parsed.pkg.stuiId, "STUI-20-002");
+  assert.equal(parsed.pkg.modelVersion, "baseline");
+  assert.notEqual(String(bundle.schemaVersion), parsed.pkg.modelVersion);
+  assert.equal(parsed.pkg.behavior.transpose, true);
+  assert.equal(parsed.pkg.fixture.rows[0].id, "r1");
+  assert.equal(parsed.pkg.fixture.rows[0].values.unit, "A1");
+  const place = buildStuiModelTree({ entries: [{ id: "owner", bundle: parsed.bundle }] });
+  assert.equal(place[0].standards[0].alternatives[0].id, "baseline");
+  assert.equal(place[0].standards[0].alternatives[0].versions[0].label, "v1");
 });
 
 test("a broken fixture does not pretend to be a course matrix", () => {

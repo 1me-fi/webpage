@@ -1,3 +1,11 @@
+import {
+  IMPORT_DRAFT_KEY,
+  IMPORT_LIBRARY_KEY,
+  emptyImportLibrary,
+  readStudioPlaygroundExport,
+  rememberImportedBundle,
+  withTranspose,
+} from "./importDraft.mjs";
 import { sandboxBundle } from "./sandboxBundle.mjs";
 
 const DEFAULT_API_BASE = "https://europe-west1-oneme-dev.cloudfunctions.net/uiPlaygroundPublicHttp";
@@ -26,8 +34,71 @@ async function loadFixture(fixtureRef) {
   return response.json();
 }
 
+let draftBundle = null;
+
+function showDraft(bundle) {
+  const parsed = readStudioPlaygroundExport(bundle);
+  draftBundle = bundle;
+  name.textContent = parsed.pkg.stuiId;
+  meta.textContent = `${parsed.hierarchy.area} / ${parsed.hierarchy.group} / ${parsed.hierarchy.model} · ${parsed.pkg.modelVersion} · tuotu luonnos`;
+  frame.srcdoc = sandboxBundle(bundle, null);
+  status.textContent = parsed.pkg.behavior.transpose
+    ? "Transponointi on päällä. Prototyyppi suoritetaan eristetyssä iframe-kehyksessä."
+    : "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.";
+  const editor = document.querySelector("#draft-editor");
+  if (editor) editor.hidden = false;
+}
+
+function loadImportLibrary() {
+  try {
+    const raw = sessionStorage.getItem(IMPORT_LIBRARY_KEY);
+    const parsed = raw ? JSON.parse(raw) : emptyImportLibrary();
+    return parsed && Array.isArray(parsed.entries) ? parsed : emptyImportLibrary();
+  } catch {
+    return emptyImportLibrary();
+  }
+}
+
+function bindDraftActions() {
+  document.querySelector("#draft-transpose")?.addEventListener("click", () => {
+    if (!draftBundle) return;
+    const parsed = readStudioPlaygroundExport(draftBundle);
+    const next = withTranspose(draftBundle, !parsed.pkg.behavior.transpose);
+    const remembered = rememberImportedBundle(loadImportLibrary(), next);
+    sessionStorage.setItem(IMPORT_LIBRARY_KEY, JSON.stringify(remembered.library));
+    sessionStorage.setItem(IMPORT_DRAFT_KEY, JSON.stringify(next));
+    showDraft(next);
+  });
+  document.querySelector("#draft-export")?.addEventListener("click", () => {
+    if (!draftBundle) return;
+    const parsed = readStudioPlaygroundExport(draftBundle);
+    const blob = new Blob([JSON.stringify(draftBundle, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `stui-20-002-${parsed.pkg.modelVersion}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
 async function main() {
+  bindDraftActions();
   const params = new URLSearchParams(window.location.search);
+  if (params.get("draft") === "1") {
+    try {
+      const entryId = params.get("entry");
+      const saved = entryId
+        ? loadImportLibrary().entries.find((entry) => entry.id === entryId)?.bundle
+        : JSON.parse(sessionStorage.getItem(IMPORT_DRAFT_KEY) || "null");
+      if (!saved) throw new Error(entryId ? "Valittua versiota ei ole kirjastossa." : "Tuotua luonnosta ei ole.");
+      showDraft(saved);
+    } catch (error) {
+      name.textContent = "Tuonti puuttuu";
+      status.textContent = error instanceof Error ? error.message : "Tuotua luonnosta ei voitu avata.";
+    }
+    return;
+  }
   const prototypeId = params.get("prototypeId");
   const version = params.get("version");
   if (!prototypeId || !version) {
