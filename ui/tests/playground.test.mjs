@@ -288,9 +288,24 @@ test("studio export import keeps the modelKey hierarchy and rejects a foreign ST
     group: "lists",
     model: "studio-configurable-table-v1",
   });
-  const flipped = withTranspose(imported.bundle, true);
+  const withRow = {
+    ...imported.bundle,
+    stuiExperiment: {
+      ...imported.pkg,
+      fixture: { kind: "synthetic", rows: [{ id: "r1", values: { unit: "A1" } }] },
+    },
+  };
+  withRow.html = withRow.html.replace(
+    /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,
+    `$1${JSON.stringify(withRow.stuiExperiment)}$2`,
+  );
+  const flipped = withTranspose(readStudioPlaygroundExport(withRow).bundle, true);
   assert.equal(flipped.stuiExperiment.behavior.transpose, true);
+  assert.equal(flipped.stuiExperiment.fixture.rows[0].id, "r1");
+  assert.equal(flipped.stuiExperiment.fixture.rows[0].values.unit, "A1");
+  assert.equal(flipped.stuiExperiment.stuiId, "STUI-20-002");
   assert.match(flipped.html, /"transpose":true/);
+  assert.match(flipped.html, /"id":"r1"/);
   assert.throws(() => readStudioPlaygroundExport({ schemaVersion: 1, stuiExperiment: { ...pkg, stuiId: "STUI-1" } }), /STUI-20-002/);
   assert.match(readFileSync(join(ui, "index.html"), "utf8"), /Tuo Playground-paketti/);
 });
