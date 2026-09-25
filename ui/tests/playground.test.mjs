@@ -4,7 +4,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { filterCatalog, isTrashedCatalogEntry, parsePrototypeCatalog, sortCatalog } from "../catalog.mjs";
-import { hierarchyFromModelKey, readStudioPlaygroundExport, withTranspose } from "../importDraft.mjs";
+import {
+  buildStuiModelTree,
+  hierarchyFromModelKey,
+  readStudioPlaygroundExport,
+  rememberImportedBundle,
+  stuiFamilyId,
+  withTranspose,
+} from "../importDraft.mjs";
 import { DEFAULT_PUBLISHER_TOOLS, parseMcpToolResult } from "../publisher.mjs";
 import { assertCanonicalFixture, buildCourseMatrix } from "../fixtureView.mjs";
 
@@ -308,6 +315,63 @@ test("studio export import keeps the modelKey hierarchy and rejects a foreign ST
   assert.match(flipped.html, /"id":"r1"/);
   assert.throws(() => readStudioPlaygroundExport({ schemaVersion: 1, stuiExperiment: { ...pkg, stuiId: "STUI-1" } }), /STUI-20-002/);
   assert.match(readFileSync(join(ui, "index.html"), "utf8"), /Tuo Playground-paketti/);
+});
+
+test("STUI-20-002 appears once, with alternatives and versions underneath", () => {
+  const basePkg = {
+    packageVersion: 1,
+    stuiId: "STUI-20-002",
+    modelKey: "studio/lists/studio-configurable-table-v1",
+    modelVersion: "baseline",
+    lineage: { source: "studio-baseline", basedOnModelVersion: null, basedOnContentHash: null },
+    behavior: { transpose: false, sections: [] },
+    fixture: { rows: [{ id: "r1", values: { unit: "A1" } }] },
+  };
+  const base = {
+    schemaVersion: 1,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(basePkg)}</script>`,
+    css: "",
+    js: "",
+    stuiExperiment: basePkg,
+  };
+  const exportedPkg = {
+    ...basePkg,
+    modelVersion: "baseline-columns",
+    behavior: { ...basePkg.behavior, transpose: true },
+    lineage: { source: "studio-export", basedOnModelVersion: "baseline", basedOnContentHash: "abc" },
+  };
+  const exported = {
+    ...base,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(exportedPkg)}</script>`,
+    stuiExperiment: exportedPkg,
+  };
+  const trialPkg = {
+    ...basePkg,
+    modelVersion: "kokeilu A",
+    lineage: { source: "mcp-edit", basedOnModelVersion: "baseline", basedOnContentHash: "def" },
+  };
+  const trial = {
+    ...base,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify(trialPkg)}</script>`,
+    stuiExperiment: trialPkg,
+  };
+  let library = { entries: [] };
+  library = rememberImportedBundle(library, base).library;
+  library = rememberImportedBundle(library, base).library;
+  library = rememberImportedBundle(library, exported).library;
+  library = rememberImportedBundle(library, trial).library;
+  assert.equal(library.entries.length, 3);
+  const tree = buildStuiModelTree(library);
+  assert.equal(stuiFamilyId("STUI-20-002"), "STUI-20");
+  assert.equal(tree.length, 1);
+  assert.equal(tree[0].id, "STUI-20");
+  assert.equal(tree[0].standards.length, 1);
+  assert.equal(tree[0].standards[0].id, "STUI-20-002");
+  const alternatives = tree[0].standards[0].alternatives;
+  assert.deepEqual(alternatives.map((item) => item.id), ["baseline", "kokeilu A"]);
+  assert.deepEqual(alternatives[0].versions.map((item) => item.label), ["v1", "baseline-columns"]);
+  assert.equal(alternatives[0].versions[0].stuiId, "STUI-20-002");
+  assert.equal(alternatives[1].versions[0].label, "v1");
 });
 
 test("a broken fixture does not pretend to be a course matrix", () => {
