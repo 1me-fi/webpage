@@ -27,8 +27,11 @@ async function loadFixture(fixtureRef) {
   return response.json();
 }
 
+let draftBundle = null;
+
 function showDraft(bundle) {
   const parsed = readStudioPlaygroundExport(bundle);
+  draftBundle = bundle;
   name.textContent = parsed.pkg.stuiId;
   meta.textContent = `${parsed.hierarchy.area} / ${parsed.hierarchy.group} / ${parsed.hierarchy.model} · ${parsed.pkg.modelVersion} · tuotu luonnos`;
   frame.srcdoc = sandboxBundle(bundle, null);
@@ -37,23 +40,31 @@ function showDraft(bundle) {
     : "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.";
   const editor = document.querySelector("#draft-editor");
   if (editor) editor.hidden = false;
+}
+
+function bindDraftActions() {
   document.querySelector("#draft-transpose")?.addEventListener("click", () => {
-    const next = withTranspose(bundle, !parsed.pkg.behavior.transpose);
+    if (!draftBundle) return;
+    const parsed = readStudioPlaygroundExport(draftBundle);
+    const next = withTranspose(draftBundle, !parsed.pkg.behavior.transpose);
     sessionStorage.setItem(IMPORT_DRAFT_KEY, JSON.stringify(next));
     showDraft(next);
-  }, { once: true });
+  });
   document.querySelector("#draft-export")?.addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+    if (!draftBundle) return;
+    const parsed = readStudioPlaygroundExport(draftBundle);
+    const blob = new Blob([JSON.stringify(draftBundle, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = `stui-20-002-${parsed.pkg.modelVersion}.json`;
     link.click();
     URL.revokeObjectURL(url);
-  }, { once: true });
+  });
 }
 
 async function main() {
+  bindDraftActions();
   const params = new URLSearchParams(window.location.search);
   if (params.get("draft") === "1") {
     try {
