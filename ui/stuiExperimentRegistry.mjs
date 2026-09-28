@@ -15,6 +15,17 @@ export const STUI_EXPERIMENT_STANDARDS = [
     behaviorKeys: ["transpose", "sections"],
     requiredBehaviorKeys: ["transpose", "sections"],
   },
+  {
+    stuiId: "STUI-20-004",
+    standardName: "Muokattava järjestyslista",
+    modelKey: "studio/lists/studio-table-list-reorder",
+    capabilities: ["gripReorder"],
+    requiredCapabilities: ["gripReorder"],
+    presentationKeys: [],
+    requiredPresentationKeys: [],
+    behaviorKeys: [],
+    requiredBehaviorKeys: [],
+  },
 ];
 
 export function findStuiExperimentStandard(stuiId, standards = STUI_EXPERIMENT_STANDARDS) {

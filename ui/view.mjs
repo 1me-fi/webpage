@@ -4,6 +4,8 @@ import {
   emptyImportLibrary,
   readStudioPlaygroundExport,
   rememberImportedBundle,
+  playgroundExportFileName,
+  withFixtureOrder,
   withTranspose,
 } from "./importDraft.mjs";
 import { sandboxBundle } from "./sandboxBundle.mjs";
@@ -36,17 +38,57 @@ async function loadFixture(fixtureRef) {
 
 let draftBundle = null;
 
+function rowLabel(row) {
+  return row?.values?.code || row?.values?.name || row?.id || "";
+}
+
+function renderDraftControls(pkg) {
+  const caps = Array.isArray(pkg.capabilities) ? pkg.capabilities : [];
+  const transpose = document.querySelector("#draft-transpose");
+  if (transpose) transpose.hidden = !caps.includes("transpose");
+  const reorder = document.querySelector("#draft-reorder");
+  if (!reorder) return;
+  reorder.replaceChildren();
+  if (!caps.includes("gripReorder")) {
+    reorder.hidden = true;
+    return;
+  }
+  reorder.hidden = false;
+  for (const row of pkg.fixture?.rows || []) {
+    const line = document.createElement("div");
+    line.dataset.rowId = row.id;
+    const label = document.createElement("span");
+    label.textContent = `${row.id} ${rowLabel(row)}`;
+    const up = document.createElement("button");
+    up.type = "button";
+    up.textContent = "↑";
+    up.dataset.move = "-1";
+    up.dataset.rowId = row.id;
+    const down = document.createElement("button");
+    down.type = "button";
+    down.textContent = "↓";
+    down.dataset.move = "1";
+    down.dataset.rowId = row.id;
+    line.append(label, up, down);
+    reorder.append(line);
+  }
+}
+
 function showDraft(bundle) {
   const parsed = readStudioPlaygroundExport(bundle);
   draftBundle = bundle;
   name.textContent = parsed.pkg.stuiId;
   meta.textContent = `${parsed.hierarchy.area} / ${parsed.hierarchy.group} / ${parsed.hierarchy.model} · ${parsed.pkg.modelVersion} · tuotu luonnos`;
   frame.srcdoc = sandboxBundle(bundle, null);
-  status.textContent = parsed.pkg.behavior.transpose
-    ? "Transponointi on päällä. Prototyyppi suoritetaan eristetyssä iframe-kehyksessä."
-    : "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.";
+  const caps = parsed.pkg.capabilities || [];
+  status.textContent = caps.includes("gripReorder")
+    ? `Rivijärjestys ${parsed.pkg.fixture.rows.map((row) => row.id).join(",")}. Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.`
+    : parsed.pkg.behavior?.transpose
+      ? "Transponointi on päällä. Prototyyppi suoritetaan eristetyssä iframe-kehyksessä."
+      : "Prototyyppi suoritetaan eristetyssä iframe-kehyksessä.";
   const editor = document.querySelector("#draft-editor");
   if (editor) editor.hidden = false;
+  renderDraftControls(parsed.pkg);
 }
 
 function loadImportLibrary() {
@@ -60,6 +102,23 @@ function loadImportLibrary() {
 }
 
 function bindDraftActions() {
+  document.querySelector("#draft-reorder")?.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-move]");
+    if (!button || !draftBundle) return;
+    const parsed = readStudioPlaygroundExport(draftBundle);
+    const ids = parsed.pkg.fixture.rows.map((row) => row.id);
+    const index = ids.indexOf(button.dataset.rowId);
+    const target = index + Number(button.dataset.move);
+    if (index < 0 || target < 0 || target >= ids.length) return;
+    const nextIds = ids.slice();
+    const [id] = nextIds.splice(index, 1);
+    nextIds.splice(target, 0, id);
+    const next = withFixtureOrder(draftBundle, nextIds);
+    const remembered = rememberImportedBundle(loadImportLibrary(), next);
+    sessionStorage.setItem(IMPORT_LIBRARY_KEY, JSON.stringify(remembered.library));
+    sessionStorage.setItem(IMPORT_DRAFT_KEY, JSON.stringify(next));
+    showDraft(next);
+  });
   document.querySelector("#draft-transpose")?.addEventListener("click", () => {
     if (!draftBundle) return;
     const parsed = readStudioPlaygroundExport(draftBundle);
@@ -76,7 +135,7 @@ function bindDraftActions() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `stui-20-002-${parsed.pkg.modelVersion}.json`;
+    link.download = playgroundExportFileName(parsed.pkg.stuiId, parsed.pkg.modelVersion);
     link.click();
     URL.revokeObjectURL(url);
   });

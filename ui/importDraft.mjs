@@ -139,8 +139,57 @@ export function editedExportModelVersion(pkg, behavior) {
   return `${stem}-${token}`.slice(0, 80);
 }
 
+export function playgroundExportFileName(stuiId, modelVersion) {
+  return `${String(stuiId || "stui").toLowerCase()}-${modelVersion}.json`;
+}
+
+export function withFixtureOrder(bundle, orderedIds) {
+  const current = bundle.stuiExperiment;
+  const standard = findStuiExperimentStandard(current?.stuiId);
+  if (!standard?.capabilities?.includes("gripReorder")) {
+    throw new Error("Kyvykkyys gripReorder ei ole tuettu.");
+  }
+  const rows = Array.isArray(current?.fixture?.rows) ? current.fixture.rows : [];
+  if (!Array.isArray(orderedIds) || orderedIds.length !== rows.length) {
+    throw new Error("Rivijärjestys ei vastaa fixturea.");
+  }
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const nextRows = orderedIds.map((id) => {
+    const row = byId.get(id);
+    if (!row) throw new Error("Riviä ei ole.");
+    return row;
+  });
+  const same = orderedIds.every((id, index) => id === rows[index].id);
+  if (same) return bundle;
+  const fixture = { ...current.fixture, rows: nextRows };
+  const pkg = {
+    ...current,
+    fixture,
+    modelVersion: editedExportModelVersion({ ...current, fixture }, current.behavior),
+    lineage: {
+      source: "studio-export",
+      basedOnModelVersion: current.modelVersion || "baseline",
+      basedOnContentHash: packageFingerprint(current),
+    },
+  };
+  return replacePackage(bundle, pkg);
+}
+
+function replacePackage(bundle, pkg) {
+  const json = JSON.stringify(pkg).replace(/</g, "\\u003c");
+  const html = String(bundle.html || "").replace(
+    /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,
+    `$1${json}$2`,
+  );
+  return { ...bundle, html, stuiExperiment: pkg };
+}
+
 export function withTranspose(bundle, transpose) {
   const current = bundle.stuiExperiment;
+  const standard = findStuiExperimentStandard(current?.stuiId);
+  if (!standard?.behaviorKeys?.includes("transpose")) {
+    throw new Error("behavior.transpose ei ole tuettu.");
+  }
   const behavior = { ...current.behavior, transpose: Boolean(transpose) };
   const unchanged = current.behavior?.transpose === behavior.transpose;
   const pkg = unchanged
@@ -155,12 +204,7 @@ export function withTranspose(bundle, transpose) {
           basedOnContentHash: packageFingerprint(current),
         },
       };
-  const json = JSON.stringify(pkg).replace(/</g, "\\u003c");
-  const html = String(bundle.html || "").replace(
-    /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,
-    `$1${json}$2`,
-  );
-  return { ...bundle, html, stuiExperiment: pkg };
+  return replacePackage(bundle, pkg);
 }
 
 /** STUI-20-002 belongs to family STUI-20. The family is not a second standard. */

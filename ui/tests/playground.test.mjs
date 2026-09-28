@@ -9,9 +9,11 @@ import {
   hierarchyFromModelKey,
   placementForPackage,
   readStudioPlaygroundExport,
+  playgroundExportFileName,
   rememberImportedBundle,
   STUI_EXPERIMENT_STANDARDS,
   stuiFamilyId,
+  withFixtureOrder,
   withTranspose,
 } from "../importDraft.mjs";
 import { findStuiExperimentStandard } from "../stuiExperimentRegistry.mjs";
@@ -419,7 +421,7 @@ test("owner return package keeps schemaVersion apart from the model version", ()
 });
 
 test("a second standard is a registry row, not a new tree", () => {
-  assert.deepEqual(STUI_EXPERIMENT_STANDARDS.map((item) => item.stuiId), ["STUI-20-002"]);
+  assert.deepEqual(STUI_EXPERIMENT_STANDARDS.map((item) => item.stuiId), ["STUI-20-002", "STUI-20-004"]);
   const extra = {
     stuiId: "STUI-90-001",
     standardName: "Koe",
@@ -580,6 +582,105 @@ test("import follows the registry row and does not require transpose for every s
     () => badBundle({ ...badBase, requiredBehaviorKeys: ["transpose"] }),
     /behavior\.transpose ei ole sallittu vaatimus/,
   );
+});
+
+function baseline20004() {
+  const pkg = {
+    packageVersion: 1,
+    stuiId: "STUI-20-004",
+    modelKey: "studio/lists/studio-table-list-reorder",
+    modelId: "stui-20-004-pilot",
+    modelVersion: "baseline",
+    lineage: { source: "studio-baseline", basedOnModelVersion: null, basedOnContentHash: null },
+    capabilities: ["gripReorder"],
+    presentation: {},
+    behavior: {},
+    dataContract: {
+      rowIdField: "id",
+      columns: [
+        { id: "code", label: "Littera", role: "primary" },
+        { id: "name", label: "Nimi", role: "data" },
+        { id: "duration", label: "Kesto", role: "data" },
+      ],
+    },
+    fixture: {
+      kind: "synthetic",
+      rows: [
+        { id: "wc-1", values: { code: "WC1", name: "Alku", duration: "1" } },
+        { id: "wc-2", values: { code: "WC2", name: "Keskikohta", duration: "2" } },
+        { id: "wc-3", values: { code: "WC3", name: "Loppu", duration: "3" } },
+      ],
+    },
+  };
+  const bundle = {
+    schemaVersion: 1,
+    html: `<div id="stui-experiment-root"></div><script type="application/json" id="stui-experiment-package">${JSON.stringify(pkg)}</script>`,
+    css: "",
+    js: "",
+    stuiExperiment: pkg,
+  };
+  return bundle;
+}
+
+test("STUI-20-004 is a second standard under STUI-20 and reorders fixture rows", () => {
+  const bundle = baseline20004();
+  const parsed = readStudioPlaygroundExport(bundle);
+  assert.deepEqual(parsed.pkg.fixture.rows.map((row) => row.id), ["wc-1", "wc-2", "wc-3"]);
+  assert.equal(parsed.pkg.presentation.hiddenColumnIds, undefined);
+  assert.equal(parsed.pkg.behavior.transpose, undefined);
+  assert.throws(() => withTranspose(bundle, true), /transpose ei ole tuettu/);
+  const reordered = withFixtureOrder(parsed.bundle, ["wc-2", "wc-1", "wc-3"]);
+  assert.deepEqual(reordered.stuiExperiment.fixture.rows.map((row) => row.id), ["wc-2", "wc-1", "wc-3"]);
+  assert.deepEqual(reordered.stuiExperiment.fixture.rows.map((row) => row.values.code), ["WC2", "WC1", "WC3"]);
+  assert.notEqual(reordered.stuiExperiment.modelVersion, "baseline");
+  assert.equal(reordered.stuiExperiment.lineage.source, "studio-export");
+  assert.equal(reordered.stuiExperiment.lineage.basedOnModelVersion, "baseline");
+  const again = withFixtureOrder(reordered, ["wc-2", "wc-1", "wc-3"]);
+  assert.equal(again.stuiExperiment.modelVersion, reordered.stuiExperiment.modelVersion);
+  const marker = again.html.match(/id="stui-experiment-package">([\s\S]*?)<\/script>/);
+  assert.equal(JSON.stringify(JSON.parse(marker[1])), JSON.stringify(again.stuiExperiment));
+  assert.equal(
+    playgroundExportFileName(again.stuiExperiment.stuiId, again.stuiExperiment.modelVersion),
+    `stui-20-004-${again.stuiExperiment.modelVersion}.json`,
+  );
+  assert.equal(playgroundExportFileName("STUI-20-002", "baseline"), "stui-20-002-baseline.json");
+  const other = baseline20004();
+  let library = rememberImportedBundle({ entries: [] }, other).library;
+  library = rememberImportedBundle(library, reordered).library;
+  const tree = buildStuiModelTree(library);
+  assert.equal(tree.length, 1);
+  assert.equal(tree[0].id, "STUI-20");
+  assert.deepEqual(tree[0].standards.map((item) => item.id), ["STUI-20-004"]);
+  const mixed = rememberImportedBundle(library, {
+    schemaVersion: 1,
+    html: `<script type="application/json" id="stui-experiment-package">${JSON.stringify({
+      packageVersion: 1,
+      stuiId: "STUI-20-002",
+      modelKey: "studio/lists/studio-configurable-table-v1",
+      modelVersion: "baseline",
+      lineage: { source: "studio-baseline", basedOnModelVersion: null, basedOnContentHash: null },
+      capabilities: ["sectionToggle", "transpose"],
+      presentation: { hiddenColumnIds: [] },
+      behavior: { transpose: false, sections: [] },
+      fixture: { rows: [{ id: "r1", values: { unit: "A1" } }] },
+    })}</script>`,
+    css: "",
+    js: "",
+    stuiExperiment: {
+      packageVersion: 1,
+      stuiId: "STUI-20-002",
+      modelKey: "studio/lists/studio-configurable-table-v1",
+      modelVersion: "baseline",
+      lineage: { source: "studio-baseline", basedOnModelVersion: null, basedOnContentHash: null },
+      capabilities: ["sectionToggle", "transpose"],
+      presentation: { hiddenColumnIds: [] },
+      behavior: { transpose: false, sections: [] },
+      fixture: { rows: [{ id: "r1", values: { unit: "A1" } }] },
+    },
+  }).library;
+  const both = buildStuiModelTree(mixed);
+  assert.deepEqual(both[0].standards.map((item) => item.id), ["STUI-20-004", "STUI-20-002"]);
+  assert.equal(both[0].standards[1].alternatives.some((item) => item.id === "STUI-20-004"), false);
 });
 
 test("a broken fixture does not pretend to be a course matrix", () => {
