@@ -283,6 +283,8 @@ test("studio export import keeps the modelKey hierarchy and rejects a foreign ST
     stuiId: "STUI-20-002",
     modelKey: "studio/lists/studio-configurable-table-v1",
     modelVersion: "baseline",
+    capabilities: ["sectionToggle", "transpose"],
+    presentation: { hiddenColumnIds: [] },
     behavior: { transpose: false, sections: [] },
   };
   const bundle = {
@@ -348,6 +350,8 @@ test("STUI-20-002 appears once, with alternatives and versions underneath", () =
     modelKey: "studio/lists/studio-configurable-table-v1",
     modelVersion: "baseline",
     lineage: { source: "studio-baseline", basedOnModelVersion: null, basedOnContentHash: null },
+    capabilities: ["sectionToggle", "transpose"],
+    presentation: { hiddenColumnIds: [] },
     behavior: { transpose: false, sections: [] },
     fixture: { rows: [{ id: "r1", values: { unit: "A1" } }] },
   };
@@ -430,6 +434,8 @@ test("a second standard is a registry row, not a new tree", () => {
     modelKey: extra.modelKey,
     modelVersion: "v1",
     lineage: { source: "studio-baseline", basedOnModelVersion: null, basedOnContentHash: null },
+    capabilities: ["sectionToggle"],
+    presentation: { hiddenColumnIds: [] },
     behavior: { transpose: false, sections: [] },
   };
   const bundle = {
@@ -481,6 +487,99 @@ test("an old transposed baseline stays baseline and is not the same package as t
   const again = rememberImportedBundle(second.library, parsed.bundle);
   assert.equal(again.duplicate, true);
   assert.equal(again.library.entries.length, 2);
+});
+
+test("import follows the registry row and does not require transpose for every standard", () => {
+  const withoutTranspose = {
+    stuiId: "STUI-90-002",
+    standardName: "Koe ilman transponointia",
+    modelKey: "studio/lists/example-plain",
+    capabilities: ["columnHide"],
+    requiredCapabilities: ["columnHide"],
+    presentationKeys: ["hiddenColumnIds"],
+    requiredPresentationKeys: ["hiddenColumnIds"],
+    behaviorKeys: [],
+    requiredBehaviorKeys: [],
+  };
+  const pkg = {
+    packageVersion: 1,
+    stuiId: "STUI-90-002",
+    modelKey: withoutTranspose.modelKey,
+    modelVersion: "baseline",
+    capabilities: ["columnHide"],
+    presentation: { hiddenColumnIds: ["unit"] },
+    behavior: {},
+  };
+  const bundle = {
+    schemaVersion: 1,
+    html: `<script type="application\/json" id="stui-experiment-package">${JSON.stringify(pkg)}</script>`,
+    css: "",
+    js: "",
+    stuiExperiment: pkg,
+  };
+  const imported = readStudioPlaygroundExport(bundle, [withoutTranspose]);
+  assert.equal(imported.pkg.behavior.transpose, undefined);
+  assert.equal(imported.pkg.presentation.hiddenColumnIds[0], "unit");
+  const blocked = {
+    ...bundle,
+    stuiExperiment: { ...pkg, behavior: { transpose: true } },
+  };
+  blocked.html = `<script type="application\/json" id="stui-experiment-package">${JSON.stringify(blocked.stuiExperiment)}</script>`;
+  assert.throws(() => readStudioPlaygroundExport(blocked, [withoutTranspose]), /behavior\.transpose/);
+  const missingTranspose = {
+    packageVersion: 1,
+    stuiId: "STUI-20-002",
+    modelKey: "studio/lists/studio-configurable-table-v1",
+    modelVersion: "baseline",
+    capabilities: ["sectionToggle", "transpose"],
+    presentation: { hiddenColumnIds: [] },
+    behavior: { sections: [] },
+  };
+  assert.throws(
+    () =>
+      readStudioPlaygroundExport({
+        schemaVersion: 1,
+        html: `<script type="application\/json" id="stui-experiment-package">${JSON.stringify(missingTranspose)}</script>`,
+        css: "",
+        js: "",
+        stuiExperiment: missingTranspose,
+      }),
+    /behavior\.transpose puuttuu/,
+  );
+  const badBase = {
+    stuiId: "STUI-90-002",
+    standardName: "Koe ilman transponointia",
+    modelKey: "studio/lists/example-plain",
+    capabilities: ["columnHide"],
+    requiredCapabilities: ["columnHide"],
+    presentationKeys: ["hiddenColumnIds"],
+    requiredPresentationKeys: ["hiddenColumnIds"],
+    behaviorKeys: [],
+    requiredBehaviorKeys: [],
+  };
+  const badBundle = (standard) =>
+    readStudioPlaygroundExport(
+      {
+        schemaVersion: 1,
+        html: `<script type="application\/json" id="stui-experiment-package">${JSON.stringify(pkg)}</script>`,
+        css: "",
+        js: "",
+        stuiExperiment: pkg,
+      },
+      [standard],
+    );
+  assert.throws(
+    () => badBundle({ ...badBase, requiredCapabilities: ["sectionToggle"] }),
+    /Kyvykkyys sectionToggle ei ole sallittu vaatimus/,
+  );
+  assert.throws(
+    () => badBundle({ ...badBase, presentationKeys: [], requiredPresentationKeys: ["hiddenColumnIds"] }),
+    /presentation\.hiddenColumnIds ei ole sallittu vaatimus/,
+  );
+  assert.throws(
+    () => badBundle({ ...badBase, requiredBehaviorKeys: ["transpose"] }),
+    /behavior\.transpose ei ole sallittu vaatimus/,
+  );
 });
 
 test("a broken fixture does not pretend to be a course matrix", () => {
