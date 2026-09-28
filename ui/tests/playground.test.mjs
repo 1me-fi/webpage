@@ -688,3 +688,23 @@ test("a broken fixture does not pretend to be a course matrix", () => {
   assert.equal(matrix.ok, false);
   assert.ok(matrix.problems.includes("modules"));
 });
+
+test("fixture reorder preserves a permutation and deterministic identity across histories", () => {
+  const base = baseline20004();
+  const order = ["wc-2", "wc-1", "wc-3"];
+  const first = withFixtureOrder(base, order);
+  const restored = withFixtureOrder(first, ["wc-1", "wc-2", "wc-3"]);
+  assert.equal(withFixtureOrder(restored, order).stuiExperiment.modelVersion, first.stuiExperiment.modelVersion);
+  assert.notEqual(restored.stuiExperiment.modelVersion, first.stuiExperiment.modelVersion);
+  assert.deepEqual(first.stuiExperiment.fixture.rows.slice().sort((a, b) => a.id.localeCompare(b.id)), base.stuiExperiment.fixture.rows);
+  assert.throws(() => withFixtureOrder(base, ["wc-1", "wc-1", "wc-3"]), /fixture/);
+  assert.throws(() => withFixtureOrder(base, ["wc-1", "wc-2"]), /fixture/);
+  assert.throws(() => withFixtureOrder(base, ["unknown", "wc-2", "wc-3"]), /Rivi/);
+  const special = baseline20004();
+  special.stuiExperiment.fixture.rows[0].values.name = "$& $1 </script>";
+  special.html = "<div></div>"; // Field-only packages gain a matching marker on editing.
+  const specialReordered = withFixtureOrder(special, order);
+  assert.deepEqual(readStudioPlaygroundExport({ ...specialReordered, stuiExperiment: undefined }).pkg, specialReordered.stuiExperiment);
+  assert.equal(specialReordered.stuiExperiment.fixture.rows[1].values.name, "$& $1 </script>");
+  assert.equal(playgroundExportFileName("STUI-20-002", "baseline"), "stui-20-002-baseline.json");
+});

@@ -143,14 +143,29 @@ export function playgroundExportFileName(stuiId, modelVersion) {
   return `${String(stuiId || "stui").toLowerCase()}-${modelVersion}.json`;
 }
 
+function canonicalContent(value) {
+  if (Array.isArray(value)) return value.map(canonicalContent);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([key, item]) => [key, canonicalContent(item)]));
+  }
+  return value;
+}
+
+/** Same content identity as Studio's STUI-20-004 helper; transpose revision behavior is unchanged. */
+export function fixtureOrderModelVersion(pkg) {
+  const { modelVersion: _version, lineage: _lineage, ...content } = pkg;
+  return `fixture-${revisionToken(canonicalContent(content))}`;
+}
+
 export function withFixtureOrder(bundle, orderedIds) {
-  const current = bundle.stuiExperiment;
+  const current = readStudioPlaygroundExport(bundle).pkg;
   const standard = findStuiExperimentStandard(current?.stuiId);
   if (!standard?.capabilities?.includes("gripReorder")) {
     throw new Error("Kyvykkyys gripReorder ei ole tuettu.");
   }
   const rows = Array.isArray(current?.fixture?.rows) ? current.fixture.rows : [];
-  if (!Array.isArray(orderedIds) || orderedIds.length !== rows.length) {
+  if (!Array.isArray(orderedIds) || orderedIds.length !== rows.length ||
+      new Set(orderedIds).size !== rows.length || new Set(rows.map((row) => row.id)).size !== rows.length) {
     throw new Error("Rivijärjestys ei vastaa fixturea.");
   }
   const byId = new Map(rows.map((row) => [row.id, row]));
@@ -165,7 +180,7 @@ export function withFixtureOrder(bundle, orderedIds) {
   const pkg = {
     ...current,
     fixture,
-    modelVersion: editedExportModelVersion({ ...current, fixture }, current.behavior),
+    modelVersion: fixtureOrderModelVersion({ ...current, fixture }),
     lineage: {
       source: "studio-export",
       basedOnModelVersion: current.modelVersion || "baseline",
@@ -177,10 +192,11 @@ export function withFixtureOrder(bundle, orderedIds) {
 
 function replacePackage(bundle, pkg) {
   const json = JSON.stringify(pkg).replace(/</g, "\\u003c");
-  const html = String(bundle.html || "").replace(
-    /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,
-    `$1${json}$2`,
-  );
+  const marker = /(<script\b[^>]*id="stui-experiment-package"[^>]*>)[\s\S]*?(<\/script>)/;
+  const originalHtml = String(bundle.html || "");
+  const html = marker.test(originalHtml)
+    ? originalHtml.replace(marker, (_match, start, end) => `${start}${json}${end}`)
+    : `${originalHtml}<script type="application/json" id="stui-experiment-package">${json}</script>`;
   return { ...bundle, html, stuiExperiment: pkg };
 }
 
