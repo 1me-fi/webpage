@@ -139,8 +139,73 @@ export function editedExportModelVersion(pkg, behavior) {
   return `${stem}-${token}`.slice(0, 80);
 }
 
+export function playgroundExportFileName(stuiId, modelVersion) {
+  return `${String(stuiId || "stui").toLowerCase()}-${modelVersion}.json`;
+}
+
+function canonicalContent(value) {
+  if (Array.isArray(value)) return value.map(canonicalContent);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([key, item]) => [key, canonicalContent(item)]));
+  }
+  return value;
+}
+
+/** Same content identity as Studio's STUI-20-004 helper; transpose revision behavior is unchanged. */
+export function fixtureOrderModelVersion(pkg) {
+  const { modelVersion: _version, lineage: _lineage, ...content } = pkg;
+  return `fixture-${revisionToken(canonicalContent(content))}`;
+}
+
+export function withFixtureOrder(bundle, orderedIds) {
+  const current = readStudioPlaygroundExport(bundle).pkg;
+  const standard = findStuiExperimentStandard(current?.stuiId);
+  if (!standard?.capabilities?.includes("gripReorder")) {
+    throw new Error("Kyvykkyys gripReorder ei ole tuettu.");
+  }
+  const rows = Array.isArray(current?.fixture?.rows) ? current.fixture.rows : [];
+  if (!Array.isArray(orderedIds) || orderedIds.length !== rows.length ||
+      new Set(orderedIds).size !== rows.length || new Set(rows.map((row) => row.id)).size !== rows.length) {
+    throw new Error("Rivijärjestys ei vastaa fixturea.");
+  }
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const nextRows = orderedIds.map((id) => {
+    const row = byId.get(id);
+    if (!row) throw new Error("Riviä ei ole.");
+    return row;
+  });
+  const same = orderedIds.every((id, index) => id === rows[index].id);
+  if (same) return bundle;
+  const fixture = { ...current.fixture, rows: nextRows };
+  const pkg = {
+    ...current,
+    fixture,
+    modelVersion: fixtureOrderModelVersion({ ...current, fixture }),
+    lineage: {
+      source: "studio-export",
+      basedOnModelVersion: current.modelVersion || "baseline",
+      basedOnContentHash: packageFingerprint(current),
+    },
+  };
+  return replacePackage(bundle, pkg);
+}
+
+function replacePackage(bundle, pkg) {
+  const json = JSON.stringify(pkg).replace(/</g, "\\u003c");
+  const marker = /(<script\b[^>]*id="stui-experiment-package"[^>]*>)[\s\S]*?(<\/script>)/;
+  const originalHtml = String(bundle.html || "");
+  const html = marker.test(originalHtml)
+    ? originalHtml.replace(marker, (_match, start, end) => `${start}${json}${end}`)
+    : `${originalHtml}<script type="application/json" id="stui-experiment-package">${json}</script>`;
+  return { ...bundle, html, stuiExperiment: pkg };
+}
+
 export function withTranspose(bundle, transpose) {
   const current = bundle.stuiExperiment;
+  const standard = findStuiExperimentStandard(current?.stuiId);
+  if (!standard?.behaviorKeys?.includes("transpose")) {
+    throw new Error("behavior.transpose ei ole tuettu.");
+  }
   const behavior = { ...current.behavior, transpose: Boolean(transpose) };
   const unchanged = current.behavior?.transpose === behavior.transpose;
   const pkg = unchanged
@@ -155,12 +220,7 @@ export function withTranspose(bundle, transpose) {
           basedOnContentHash: packageFingerprint(current),
         },
       };
-  const json = JSON.stringify(pkg).replace(/</g, "\\u003c");
-  const html = String(bundle.html || "").replace(
-    /(<script type="application\/json" id="stui-experiment-package">)[\s\S]*?(<\/script>)/,
-    `$1${json}$2`,
-  );
-  return { ...bundle, html, stuiExperiment: pkg };
+  return replacePackage(bundle, pkg);
 }
 
 /** STUI-20-002 belongs to family STUI-20. The family is not a second standard. */

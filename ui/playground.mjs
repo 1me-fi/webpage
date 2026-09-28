@@ -276,7 +276,7 @@ function renderImportHierarchy(library) {
   }
   root.append(tree);
   if (status) {
-    status.textContent = "STUI-20 näkyy kerran ja STUI-20-002 sen alla. Vaihtoehdot ja versiot eivät ole omia standardeja. Luonnoksia ei ole julkaistu.";
+    status.textContent = "STUI-20 näkyy kerran. Sen alla ovat erilliset standardit. Vaihtoehdot ja versiot eivät ole omia standardeja. Luonnoksia ei ole julkaistu.";
   }
 }
 
