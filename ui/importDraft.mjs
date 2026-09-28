@@ -11,6 +11,61 @@ function markerPackage(html) {
   return JSON.parse(match[1]);
 }
 
+const KNOWN_PRESENTATION = new Set(["hiddenColumnIds"]);
+const KNOWN_BEHAVIOR = new Set(["transpose", "sections"]);
+
+function names(required, allowed) {
+  return Array.isArray(required) ? required : allowed || [];
+}
+
+function assertRegistryPackage(pkg, standard) {
+  const allowedCapabilities = standard.capabilities || [];
+  const requiredCapabilities = names(standard.requiredCapabilities, allowedCapabilities);
+  const capabilities = Array.isArray(pkg.capabilities) ? pkg.capabilities.map(String) : [];
+  if (!Array.isArray(pkg.capabilities) || capabilities.length === 0) {
+    throw new Error("Paketin capabilities puuttuu.");
+  }
+  for (const capability of capabilities) {
+    if (!allowedCapabilities.includes(capability)) {
+      throw new Error(`Kyvykkyys ${capability} ei ole tuettu. Käyttöönotto estetty.`);
+    }
+  }
+  for (const capability of requiredCapabilities) {
+    if (!capabilities.includes(capability)) throw new Error(`Kyvykkyys ${capability} puuttuu.`);
+  }
+  const allowedPresentation = standard.presentationKeys || [];
+  const allowedBehavior = standard.behaviorKeys || [];
+  const requiredPresentation = names(standard.requiredPresentationKeys, allowedPresentation);
+  const requiredBehavior = names(standard.requiredBehaviorKeys, allowedBehavior);
+  for (const key of [...allowedPresentation, ...requiredPresentation]) {
+    if (!KNOWN_PRESENTATION.has(key)) throw new Error(`presentation.${key} ei ole validoitu.`);
+  }
+  for (const key of [...allowedBehavior, ...requiredBehavior]) {
+    if (!KNOWN_BEHAVIOR.has(key)) throw new Error(`behavior.${key} ei ole validoitu.`);
+  }
+  const presentation = pkg.presentation && typeof pkg.presentation === "object" ? pkg.presentation : null;
+  const behavior = pkg.behavior && typeof pkg.behavior === "object" ? pkg.behavior : null;
+  if (requiredPresentation.includes("hiddenColumnIds") && (!presentation || !Array.isArray(presentation.hiddenColumnIds))) {
+    throw new Error("presentation.hiddenColumnIds puuttuu.");
+  }
+  if (requiredBehavior.includes("transpose") && (!behavior || typeof behavior.transpose !== "boolean")) {
+    throw new Error("Paketin behavior.transpose puuttuu.");
+  }
+  if (requiredBehavior.includes("sections") && (!behavior || !Array.isArray(behavior.sections))) {
+    throw new Error("behavior puuttuu.");
+  }
+  for (const key of Object.keys(presentation || {})) {
+    if (!allowedPresentation.includes(key)) {
+      throw new Error(`presentation.${key} ei kuulu tämän Studio-version tukeen.`);
+    }
+  }
+  for (const key of Object.keys(behavior || {})) {
+    if (!allowedBehavior.includes(key)) {
+      throw new Error(`behavior.${key} ei kuulu tämän Studio-version tukeen.`);
+    }
+  }
+}
+
 export function hierarchyFromModelKey(modelKey) {
   const parts = String(modelKey || "").split("/").filter(Boolean);
   if (parts.length < 3) {
@@ -44,9 +99,7 @@ export function readStudioPlaygroundExport(raw, standards = STUI_EXPERIMENT_STAN
   if (pkg.modelKey !== standard.modelKey) {
     throw new Error(`modelKey ei vastaa rekisteröityä standardia ${standard.stuiId}.`);
   }
-  if (!pkg.behavior || typeof pkg.behavior.transpose !== "boolean") {
-    throw new Error("Paketin behavior.transpose puuttuu.");
-  }
+  assertRegistryPackage(pkg, standard);
   hierarchyFromModelKey(pkg.modelKey);
   return {
     bundle: { ...raw, stuiExperiment: pkg },

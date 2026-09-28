@@ -9,8 +9,11 @@ export const STUI_EXPERIMENT_STANDARDS = [
     standardName: "Konfiguroitava taulukko",
     modelKey: "studio/lists/studio-configurable-table-v1",
     capabilities: ["sectionToggle", "transpose"],
+    requiredCapabilities: ["sectionToggle", "transpose"],
     presentationKeys: ["hiddenColumnIds"],
+    requiredPresentationKeys: ["hiddenColumnIds"],
     behaviorKeys: ["transpose", "sections"],
+    requiredBehaviorKeys: ["transpose", "sections"],
   },
 ];
 
