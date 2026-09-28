@@ -20,6 +20,17 @@ function names(required, allowed) {
 
 function assertRegistryPackage(pkg, standard) {
   const allowedCapabilities = standard.capabilities || [];
+  const allowedPresentation = standard.presentationKeys || [];
+  const allowedBehavior = standard.behaviorKeys || [];
+  for (const key of names(standard.requiredCapabilities, allowedCapabilities)) {
+    if (!allowedCapabilities.includes(key)) throw new Error(`Kyvykkyys ${key} ei ole sallittu vaatimus.`);
+  }
+  for (const key of names(standard.requiredPresentationKeys, allowedPresentation)) {
+    if (!allowedPresentation.includes(key)) throw new Error(`presentation.${key} ei ole sallittu vaatimus.`);
+  }
+  for (const key of names(standard.requiredBehaviorKeys, allowedBehavior)) {
+    if (!allowedBehavior.includes(key)) throw new Error(`behavior.${key} ei ole sallittu vaatimus.`);
+  }
   const requiredCapabilities = names(standard.requiredCapabilities, allowedCapabilities);
   const capabilities = Array.isArray(pkg.capabilities) ? pkg.capabilities.map(String) : [];
   if (!Array.isArray(pkg.capabilities) || capabilities.length === 0) {
@@ -33,8 +44,6 @@ function assertRegistryPackage(pkg, standard) {
   for (const capability of requiredCapabilities) {
     if (!capabilities.includes(capability)) throw new Error(`Kyvykkyys ${capability} puuttuu.`);
   }
-  const allowedPresentation = standard.presentationKeys || [];
-  const allowedBehavior = standard.behaviorKeys || [];
   const requiredPresentation = names(standard.requiredPresentationKeys, allowedPresentation);
   const requiredBehavior = names(standard.requiredBehaviorKeys, allowedBehavior);
   for (const key of [...allowedPresentation, ...requiredPresentation]) {

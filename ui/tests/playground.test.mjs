@@ -546,6 +546,40 @@ test("import follows the registry row and does not require transpose for every s
       }),
     /behavior\.transpose puuttuu/,
   );
+  const badBase = {
+    stuiId: "STUI-90-002",
+    standardName: "Koe ilman transponointia",
+    modelKey: "studio/lists/example-plain",
+    capabilities: ["columnHide"],
+    requiredCapabilities: ["columnHide"],
+    presentationKeys: ["hiddenColumnIds"],
+    requiredPresentationKeys: ["hiddenColumnIds"],
+    behaviorKeys: [],
+    requiredBehaviorKeys: [],
+  };
+  const badBundle = (standard) =>
+    readStudioPlaygroundExport(
+      {
+        schemaVersion: 1,
+        html: `<script type="application\/json" id="stui-experiment-package">${JSON.stringify(pkg)}</script>`,
+        css: "",
+        js: "",
+        stuiExperiment: pkg,
+      },
+      [standard],
+    );
+  assert.throws(
+    () => badBundle({ ...badBase, requiredCapabilities: ["sectionToggle"] }),
+    /Kyvykkyys sectionToggle ei ole sallittu vaatimus/,
+  );
+  assert.throws(
+    () => badBundle({ ...badBase, presentationKeys: [], requiredPresentationKeys: ["hiddenColumnIds"] }),
+    /presentation\.hiddenColumnIds ei ole sallittu vaatimus/,
+  );
+  assert.throws(
+    () => badBundle({ ...badBase, requiredBehaviorKeys: ["transpose"] }),
+    /behavior\.transpose ei ole sallittu vaatimus/,
+  );
 });
 
 test("a broken fixture does not pretend to be a course matrix", () => {
