@@ -57,6 +57,7 @@ with tempfile.TemporaryDirectory(prefix='kyselyt-cgi-') as tmp:
     check(request('/kyselyt/hallinta/')[0] == 403, 'anonymous admin denied')
     check(request('/kyselyt/hallinta/?survey=1&csv=1')[0] == 403, 'anonymous CSV denied')
     check(request('/kyselyt/hallinta/', spoof_user='attacker')[0] == 403, 'client-style REMOTE_USER spoof denied')
+    check(request('/kyselyt/hallinta:80')[0] == 404, 'malformed URI is handled as HTTP 404')
     check(request('/kyselyt/api/survey/'+tokens['draft'])[0] == 404, 'draft API hidden')
     check(request('/kyselyt/k/'+tokens['draft'])[0] == 404, 'draft HTML hidden')
     check(request('/kyselyt/k/'+'b'*48)[0] == 404, 'unknown HTML link is HTTP 404')
@@ -79,6 +80,7 @@ with tempfile.TemporaryDirectory(prefix='kyselyt-cgi-') as tmp:
     set_cookie = headers.get('Set-Cookie', '')
     check('Secure' in set_cookie and 'HttpOnly' in set_cookie and 'SameSite=Strict' in set_cookie and 'Path=/kyselyt/hallinta/' in set_cookie, 'admin session cookie is scoped and hardened')
     jar = http.cookies.SimpleCookie();jar.load(set_cookie);cookie='; '.join(k+'='+v.value for k,v in jar.items())
+    check(request('/kyselyt/hallinta/', cookie=cookie)[0] == 403, 'valid admin session without server identity is denied')
     check(request('/kyselyt/hallinta/','POST',{'action':'state','survey':1,'state':'open','csrf':'wrong'},cookie,True,remote_user='plesk-admin')[0] == 403, 'admin mutation requires CSRF')
     import re
     csrf=re.search(r'name="csrf" value="([a-f0-9]+)"',html.decode()).group(1)
