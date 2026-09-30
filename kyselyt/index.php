@@ -29,12 +29,7 @@ try {
     if (in_array($route, ['/kyselyt', '/kyselyt/'], true)) {
         shell('<main class="k-sent"><h1>Koulutustarvekyselyt</h1><p>Avaa kouluttajalta tai työnantajalta saamasi kyselylinkki.</p></main>');
     }
-    $configPath = getenv('KYSELYT_CONFIG');
-    if (!$configPath || !is_file($configPath)) throw new RequestError(503, 'Kyselypalvelua valmistellaan. Yritä myöhemmin uudelleen.');
-    $configReal = realpath($configPath); $root = realpath($_SERVER['DOCUMENT_ROOT']);
-    if ($root && ($configReal === $root || str_starts_with($configReal, $root . '/'))) throw new RuntimeException('Config must be outside document root');
-    $config = require $configReal;
-    if (!is_array($config) || strlen($config['rate_secret'] ?? '') < 32) throw new RuntimeException('Invalid server configuration');
+    $config = loadKyselytConfig();
     $db = db($config);
     if (preg_match('~\A/kyselyt/k/[a-f0-9]{48}/?\z~D', $route)) {
         $token = basename(rtrim($route, '/'));
