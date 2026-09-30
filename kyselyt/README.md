@@ -2,7 +2,7 @@
 
 Work: `KYSELYT-20260930-01`. Source: the supplied 30 September 2026 implementation package. Shared governance remains in `1me-platform`; this document describes only this implementation.
 
-**Status: implementation prepared; production integration and UI acceptance pending.** No deployment or main integration is claimed. The user's current instruction overrides the package's “UI approved” wording: UI still requires confirmation in the real hosted view.
+**Status: implementation and verified Plesk host adapter prepared; production smoke, main integration and deployment are still pending.** The user approved the respondent UI on 30 September 2026. No merge or production deployment is claimed.
 
 ## Scope
 
@@ -16,28 +16,31 @@ All production files are in `/kyselyt/`; the existing root page, root `.htaccess
 
 Content is immutable after first publication, enforced by an SQLite trigger. Every JSON import creates a separate draft and random link. Questions and answer choices are validated on the server. A team checkbox means a reported observation; unchecked exports as “Ei ilmoitettu”. UTC storage, Europe/Helsinki administration and CSV.
 
-## Required host integration — not yet verified
+## Verified 1me.fi Plesk host contract
 
-Repository inspection found static HTML/JS and Apache `.htaccess`, but no server authentication, database configuration, SSH destination or deployment workflow. Do not invent credentials, create a parallel user database or replace the root routing.
+The live host was checked on 30 September 2026:
 
-Before deploying, verify:
+- public document root: `/var/www/vhosts/1me.fi/httpdocs` (Plesk SSH chroot view: `/httpdocs`);
+- PHP `8.3.35`, PHP-FPM served by Apache;
+- HTTPS enabled with HTTP→HTTPS redirect;
+- `PDO`, `pdo_sqlite`, `sqlite3`, `mbstring` and session support are available;
+- Plesk Git tracks `https://github.com/1me-fi/webpage`, branch `main`, with automatic deployment to `/httpdocs`;
+- private storage exists at `/private/kyselyt/` with `/private/kyselyt/backups/` outside the document root;
+- Plesk Password-Protected Directories protects `/kyselyt/hallinta`.
 
-1. The actual 1me.fi document root, deployment transport and rollback procedure; Apache rewrite/AllowOverride support, HTTPS redirect and existing headers.
-2. PHP 8.3+, PDO SQLite, mbstring and session extensions. The package permits SQLite only if suitable for the existing host. If an existing MySQL/MariaDB platform is found, adapt and test the storage implementation before deploying; this version does not claim MySQL support.
-3. Existing platform administrator authentication and rights. The adapter below must use that verified session/permission check. This repository contains no login service. Its default adapter denies all access.
-4. A private writable directory outside **the actual public document root** for the database, configuration, session storage and backups. PHP must have access without granting other hosting users read access.
-5. Existing same-origin admin session cookies use Secure, HttpOnly, an appropriate SameSite setting, strict session mode and session-ID rotation at login. Use the host's existing login/logout flow. The adapter must start that session and return exactly `true` only for an authorized administrator.
+The application does not create a second administrator database. Plesk/Apache performs HTTP authentication and the PHP adapter accepts only the server-generated `REMOTE_USER` (or Apache rewrite-compatible `REDIRECT_REMOTE_USER`) identity. Browser headers, query parameters and client-side roles are not accepted as authentication. If the server identity is absent, administration fails closed.
 
-Do not deploy until those facts are established. CGI tests use a temporary synthetic auth adapter; they do not validate the host's real login.
+A physical `kyselyt/hallinta/` entrypoint is kept in the repository so Plesk can protect a real directory. It delegates to the canonical `kyselyt/index.php` router. The application still performs its own server-identity check even if host protection is accidentally missing.
 
 ## Installation
 
-1. Copy `tools/config.example.php` **outside the web root**, set its mode to `0600`, fill the absolute private database path and canonical `public_origin` (`https://1me.fi`). Generate `rate_secret` securely, for example `bin2hex(random_bytes(32))`; never put it in Git, a browser asset or a transcript.
-2. Implement `authorize_admin` by requiring the host's trusted platform bootstrap and checking its server-side administrator permission. Do not trust a request header, URL flag, public token or first name as authentication.
-3. Configure the host's PHP runtime environment variable `KYSELYT_CONFIG` to that external configuration file. Keep secrets out of the public `.htaccess`. Confirm how this hosting provider exposes runtime variables to PHP/FastCGI.
-4. With the same configuration, run `php kyselyt/tools/install.php`. It creates the schema idempotently and publishes no surveys or administrator accounts. Back up an existing database first; this is an initial schema, not a destructive migration.
-5. Deploy only the production directory and verify `.htaccess` routing. `lib/`, `tests/`, `tools/`, README and test report must not be served. Prefer excluding tests and tools from the public deployment after CLI installation. Keep `lib/` inaccessible by HTTP while PHP includes it internally.
-6. Test the full workflow using an explicitly marked test survey before sharing any real respondent link. Do not import real personal responses as test fixtures.
+1. In the Plesk File Manager, copy `kyselyt/tools/config.example.php` to the existing private location `/private/kyselyt/config.php` (physical web-runtime path `/var/www/vhosts/1me.fi/private/kyselyt/config.php`). Do not place the config under `/httpdocs`.
+2. Keep `database => __DIR__ . '/kyselyt.sqlite'`. This deliberately works both in the Plesk SSH chroot and in the web runtime because it is resolved relative to the private config file itself.
+3. Generate a fresh `rate_secret` with at least 32 random bytes and store only the resulting secret in the private config. Never commit it or paste it into tickets/transcripts. The example `authorize_admin` must remain bound to `authorizePleskAdminSession()`.
+4. Restrict the private config to the subscription user (target mode `0600`). The production loader automatically resolves the sibling private path from the public document root; `KYSELYT_CONFIG` remains an explicit override for tests or alternate hosts, and is rejected if it points inside the document root.
+5. Run `php kyselyt/tools/install.php` from the deployed checkout. It creates the SQLite schema idempotently and publishes no surveys or administrator accounts. Back up an existing database first if one already exists.
+6. Keep the Plesk Password-Protected Directory on `/kyselyt/hallinta`. Verify that an anonymous request is challenged/denied and that an authenticated request reaches the PHP admin page. The PHP session uses a dedicated `KYSSESSID` cookie scoped to `/kyselyt/hallinta/`, with Secure, HttpOnly, SameSite=Strict and strict session mode.
+7. Verify that `lib/`, `tests/`, `tools/`, README and test report are not served. Test the full workflow with an explicitly marked test survey before sharing any real respondent link. Do not use real personal responses as test fixtures.
 
 The API enforces a 128 KiB request body, canonical options, exactly one answer per question, name 1–100 characters and feedback up to 5,000 characters. JSON import is capped at 1 MiB/300 questions. A per-IP HMAC bucket allows 300 successful new submissions/minute, shared across surveys; retrying an already committed payload does not consume this quota. Buckets expire after one hour. Raw IPs are not stored by this application. Verify hosting access-log policy separately; disable request-body logging and protect logs containing respondent URLs. Apply the host's request-rate/body controls for malformed-request floods, with a group-training shared-network allowance.
 
@@ -66,7 +69,7 @@ Valitse aiheet Sheetsissä → vie JSON → kirjaudu hallintaan → tuo ja esika
 
 ## Backup and restore
 
-Use `php kyselyt/tools/backup.php /absolute/private/backups/kyselyt-YYYYMMDD-HHMM.sqlite` with `KYSELYT_CONFIG` set. The destination must be new and outside the web root. SQLite `VACUUM INTO` creates a consistent snapshot; the script checks database integrity and foreign keys. Schedule the command using the host's existing backup policy only after deciding retention and backup destination. Protect/encrypt backups using that system because they contain first names and feedback. No recurring job was installed.
+Use `php kyselyt/tools/backup.php /private/kyselyt/backups/kyselyt-YYYYMMDD-HHMM.sqlite` on the Plesk SSH shell. The production default config is discovered automatically; `KYSELYT_CONFIG` is only needed for an explicit override. The destination must be new and outside the web root. SQLite `VACUUM INTO` creates a consistent snapshot; the script checks database integrity and foreign keys. Schedule the command using the host's existing backup policy only after deciding retention and backup destination. Protect/encrypt backups using that system because they contain first names and feedback. No recurring job was installed.
 
 Restore first into a **new private filename**, check `PRAGMA integrity_check` and `PRAGMA foreign_key_check`, and compare survey/submission/answer counts. Test the restored copy with separate test configuration. For an approved real recovery, put only the survey write path into maintenance, retain a verified backup of current data, point the external configuration to the verified restored file with correct ownership/mode, then test reading/admin/export before re-enabling submissions. Do not overwrite the only database or silently discard responses received after a backup. Host-level backup retention, restore and actual permissions still need verification.
 
@@ -74,6 +77,7 @@ Restore first into a **new private filename**, check `PRAGMA integrity_check` an
 
 ```sh
 php kyselyt/tests/service.php
+php kyselyt/tests/host.php
 python3 kyselyt/tests/http_cgi.py  # PHP_CGI can name php-cgi; requires the same extensions
 node --test kyselyt/tests/export.test.cjs
 node --test ui/tests/playground.test.mjs
