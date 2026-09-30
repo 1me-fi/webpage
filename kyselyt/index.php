@@ -23,9 +23,11 @@ function body(int $limit): mixed {
     if (strlen($raw) > $limit) throw new RequestError(413, 'Pyyntö ylittää sallitun koon.');
     return decode($raw);
 }
-$route = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$api = str_starts_with($route, '/kyselyt/api/');
+$api = false;
 try {
+    $route = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    if (!is_string($route)) throw new RequestError(404, 'Sivua ei löytynyt.');
+    $api = str_starts_with($route, '/kyselyt/api/');
     if (in_array($route, ['/kyselyt', '/kyselyt/'], true)) {
         shell('<main class="k-sent"><h1>Koulutustarvekyselyt</h1><p>Avaa kouluttajalta tai työnantajalta saamasi kyselylinkki.</p></main>');
     }
