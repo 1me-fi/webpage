@@ -1,7 +1,9 @@
 """Real PHP CGI request tests, without a network listener or production credentials.
 
 Set PHP_CGI and optionally PHP_CGI_ARGS (JSON array) to the test runtime.
-The test injects CGI REMOTE_USER to model the identity that Plesk/Apache supplies\nafter Password-Protected Directories authentication.\n"""
+The test injects CGI REMOTE_USER to model the identity that Plesk/Apache supplies
+after Password-Protected Directories authentication.
+"""
 import http.cookies
 import json
 import os
