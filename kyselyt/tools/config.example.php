@@ -1,14 +1,13 @@
 <?php
-// Copy OUTSIDE the public document root, chmod 600 and set KYSELYT_CONFIG.
-// Adapt to the verified existing host. Never deploy this example unchanged.
+// Copy to /private/kyselyt/config.php in the Plesk SSH/File Manager view (outside /httpdocs).
+// The web runtime resolves the same file below /var/www/vhosts/1me.fi/private/kyselyt/.
 return [
-    'database' => '/absolute/private/path/kyselyt.sqlite',
+    'database' => __DIR__ . '/kyselyt.sqlite',
     'public_origin' => 'https://1me.fi',
-    'rate_secret' => '', // Set to at least 32 random bytes (e.g. 64 hex characters).
+    'rate_secret' => '', // Set to at least 32 random bytes (for example 64 hex characters).
     'authorize_admin' => static function (): bool {
-        // Load the existing trusted platform bootstrap, start its secure session,
-        // and return true only after its SERVER-SIDE administrator permission check.
-        // Unconfigured by design; never trust query parameters or browser role flags.
-        return false;
+        // Plesk/Apache Password-Protected Directories authenticates the request first.
+        // Only server-generated REMOTE_USER/REDIRECT_REMOTE_USER is accepted here.
+        return authorizePleskAdminSession();
     },
 ];
