@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "title": "Koulutustarvekysely – esimerkki",
+  "description": "Kerro, mistä aiheista tarvitset koulutusta. Aiheita ei tarvitse osata ennestään.",
+  "instructions": "Valitse jokaisesta aiheesta yksi omaa tilannettasi kuvaava vastaus. Voit ilmoittaa erikseen tiimin koulutustarpeesta.",
+  "options": [
+    {
+      "id": "basics",
+      "label": "Tarvitsen peruskoulutusta"
+    },
+    {
+      "id": "refresh",
+      "label": "Tarvitsen kertausta tai syventämistä"
+    },
+    {
+      "id": "sufficient",
+      "label": "Osaamiseni riittää työssäni"
+    },
+    {
+      "id": "not_needed",
+      "label": "En tarvitse tätä työssäni"
+    },
+    {
+      "id": "unsure",
+      "label": "En osaa arvioida koulutustarvettani"
+    }
+  ],
+  "teamOption": {
+    "label": "Myös tiimissämme on koulutustarvetta tässä aiheessa.",
+    "required": false
+  },
+  "groups": [
+    {
+      "id": "group-1",
+      "title": "Sähkömoottorit",
+      "description": "Mistä moottoreihin liittyvistä asioista tarvitset koulutusta?",
+      "questions": [
+        {
+          "id": "overload",
+          "title": "Moottorien ylikuormitussuojaus",
+          "description": "Miten moottoria suojataan liialta kuormitukselta ja kuumenemiselta? Esimerkiksi lämpöreleet ja moottorinsuojakytkimet.",
+          "required": true
+        },
+        {
+          "id": "speed",
+          "title": "Moottorin nopeuden säätäminen",
+          "description": "Miten moottorin nopeutta muutetaan ja moottoria ohjataan taajuusmuuttajalla?",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "group-2",
+      "title": "Anturit ja mittaukset",
+      "description": "Anturit kertovat koneelle, mitä ympärillä tapahtuu.",
+      "questions": [
+        {
+          "id": "temperature",
+          "title": "Lämpötilan mittaaminen",
+          "description": "Miten lämpötila mitataan anturilla tai ilman kosketusta? Esimerkiksi koneen, nesteen tai tuotteen lämpötila.",
+          "required": true
+        },
+        {
+          "id": "presence",
+          "title": "Kappaleiden tunnistaminen",
+          "description": "Miten kone tunnistaa saapuvan kappaleen tai sen, että jokin osa on oikeassa paikassa?",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "group-3",
+      "title": "Automaatio ja vianetsintä",
+      "description": "Arvioi koulutustarvetta oman työsi kannalta. Aihetta ei tarvitse osata ennestään.",
+      "questions": [
+        {
+          "id": "plc",
+          "title": "Ohjelmoitavan ohjaimen toiminta",
+          "description": "Miten PLC-ohjain lukee antureiden tietoja ja ohjaa koneen toimintaa ohjelman avulla?",
+          "required": true
+        },
+        {
+          "id": "fault",
+          "title": "Koneen vian selvittäminen",
+          "description": "Miten selvitetään, miksi kone ei käynnisty tai toiminta pysähtyy? Apuna ovat mittaukset ja ohjausohjelman tiedot.",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
