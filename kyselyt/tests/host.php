@@ -9,11 +9,14 @@ function hostCheck(bool $ok, string $label): void {
     $results[] = "PASS $label";
 }
 $tmp = sys_get_temp_dir() . '/kyselyt-host-' . bin2hex(random_bytes(6));
-$root = $tmp . '/site';
-$private = $tmp . '/private';
+$webspace = $tmp . '/webspace';
+$root = $webspace . '/httpdocs';
+$private = $webspace . '/private/kyselyt';
+$sessions = $tmp . '/sessions';
 mkdir($root, 0700, true);
 mkdir($private, 0700, true);
-ini_set('session.save_path', $tmp);
+mkdir($sessions, 0700, true);
+ini_set('session.save_path', $sessions);
 $_SERVER['DOCUMENT_ROOT'] = $root;
 $inside = $root . '/config.php';
 file_put_contents($inside, "<?php return [];\n");
@@ -27,7 +30,8 @@ try {
 unlink($inside);
 $external = $private . '/config.php';
 file_put_contents($external, "<?php return ['database'=>__DIR__.'/kyselyt.sqlite','public_origin'=>'https://1me.fi','rate_secret'=>'" . str_repeat('x', 64) . "','authorize_admin'=>static fn(): bool => authorizePleskAdminSession()];\n");
-putenv('KYSELYT_CONFIG=' . $external);
+putenv('KYSELYT_CONFIG');
+hostCheck(resolveKyselytConfigPath() === realpath($external), 'default Plesk sibling config path resolves outside httpdocs');
 $loaded = loadKyselytConfig();
 hostCheck($loaded['database'] === $private . '/kyselyt.sqlite', 'external config keeps database beside private config');
 unset($_SERVER['REMOTE_USER'], $_SERVER['REDIRECT_REMOTE_USER']);
@@ -43,6 +47,6 @@ hostCheck($params['secure'] && $params['httponly'] && $params['samesite'] === 'S
 hostCheck(($_SESSION['kyselyt_admin_principal'] ?? null) === 'plesk-admin', 'authenticated principal is bound to session');
 session_write_close();
 foreach ($results as $line) echo $line . "\n";
-foreach (glob($tmp . '/*') ?: [] as $path) if (is_file($path)) unlink($path);
+foreach (glob($sessions . '/*') ?: [] as $path) if (is_file($path)) unlink($path);
 if (is_file($external)) unlink($external);
-@rmdir($private); @rmdir($root); @rmdir($tmp);
+@rmdir($sessions); @rmdir($private); @rmdir(dirname($private)); @rmdir($root); @rmdir($webspace); @rmdir($tmp);
