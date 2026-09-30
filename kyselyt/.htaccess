@@ -4,4 +4,5 @@ RewriteEngine On
 RewriteRule ^(?:lib|tests|tools)(?:/|$) - [F,L]
 RewriteRule ^(?:README|TEST-REPORT)\.md$ - [F,L]
 RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
