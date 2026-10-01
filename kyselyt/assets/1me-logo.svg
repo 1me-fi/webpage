@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="563" height="466" viewBox="-6.75 31.75 562.5 465.5" aria-label="Symmetrinen vektoriversio mustilla viivoilla, rajattu pienemmillä marginaaleilla">
+  <rect x="-6.75" y="31.75" width="562.5" height="465.5" fill="#EA580C"/>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Branches are drawn first so the center stem covers joins cleanly -->
+    <polyline points="73 104 274.5 140 476 104" stroke="#000000" stroke-width="5"/>
+    <line x1="52" y1="174" x2="497" y2="174" stroke="#000000" stroke-width="5"/>
+    <polyline points="78 234 274.5 209 471 234" stroke="#000000" stroke-width="5"/>
+    <polyline points="118 259 274.5 264 431 259" stroke="#000000" stroke-width="4"/>
+    <polyline points="103 314 274.5 299 446 314" stroke="#000000" stroke-width="4"/>
+    <polyline points="128 364 274.5 334 421 364" stroke="#000000" stroke-width="4"/>
+
+    <!-- Center stem drawn last to avoid visible caps/gaps at intersections -->
+    <line x1="274.5" y1="92" x2="274.5" y2="437" stroke="#000000" stroke-width="8"/>
+  </g>
+</svg>
