@@ -88,9 +88,12 @@ if ($s) {
         $out .= '<section class="k-question"><h2>Tuonnin esikatselu</h2><p>' . h($d['description']) . '</p><p>' . h($d['instructions']) . '</p>';
         foreach ($d['groups'] as $g) { $out .= '<h3>' . h($g['title']) . '</h3>'; foreach ($g['questions'] as $q) $out .= '<p><strong>' . h($q['title']) . '</strong><br>' . h($q['description']) . '</p>'; }
         $out .= '<p>Vastausvaihtoehdot: ' . h(implode(' · ', OPTIONS)) . '</p><p>' . h(TEAM_LABEL) . '</p><form method="post">' . csrfInput($csrf) . '<input type="hidden" name="action" value="import"><label class="k-field">Kyselyn nimi<input name="title" maxlength="250" required value="' . h($d['title']) . '"></label><label class="k-field">Organisaatio / asiakasryhmä<input name="organisation" maxlength="250" required></label><button class="k-action k-primary">Tallenna luonnos</button></form></section>';
-    }
-    $out .= '<h2>Kyselyt</h2><div class="table-wrap"><table><thead><tr><th>Nimi</th><th>Tila</th><th>Luotu</th><th>Vastauksia</th></tr></thead><tbody>';
-    $rows = $db->query('SELECT s.*, (SELECT COUNT(*) FROM submissions r WHERE r.survey_id=s.id) AS response_count FROM surveys s ORDER BY s.id DESC')->fetchAll();
+        }
+    } elseif ($adminView === 'settings') {
+        $out .= '<section class="k-question admin-settings"><h2>Asetukset</h2><p>Tässä versiossa ei ole vielä käyttäjän muokattavia asetuksia. Tämä näkymä toimii asetusten kotina myöhemmille hallinta-asetuksille.</p><dl><div><dt>Kyselytuonti</dt><dd>JSON, enintään 1 MiB</dd></div><div><dt>Hallinta</dt><dd>Suojattu kirjautuminen</dd></div></dl></section>';
+    } else {
+        $out .= '<section class="admin-list" data-stui="STUI-20-001"><div class="admin-list__titlebar"><div><h2>Kaikki kyselyt</h2></div><div class="admin-list__titleActions"><span class="admin-stui-id">STUI-20-001</span><a class="k-action k-primary" href="' . $base . '?view=new">+ Uusi kysely</a></div></div><div class="table-wrap"><table class="admin-stui-table"><thead><tr><th>Nimi</th><th>Tila</th><th>Luotu</th><th>Vastauksia</th></tr></thead><tbody>';
+        $rows = $db->query('SELECT s.*, (SELECT COUNT(*) FROM submissions r WHERE r.survey_id=s.id) AS response_count FROM surveys s ORDER BY s.id DESC')->fetchAll();
     foreach ($rows as $row) $out .= '<tr><td><a href="' . adminLink($row['id']) . '">' . h($row['title']) . '</a><br>' . h($row['organisation']) . '</td><td>' . $labels[$row['state']] . '</td><td>' . h((new DateTimeImmutable($row['created_at']))->setTimezone(new DateTimeZone('Europe/Helsinki'))->format('d.m.Y H:i')) . '</td><td>' . (int)$row['response_count'] . '</td></tr>';
     $out .= '</tbody></table></div>';
 }
