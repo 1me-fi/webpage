@@ -4,6 +4,8 @@ $_SESSION['kyselyt_csrf'] ??= bin2hex(random_bytes(32));
 $csrf = $_SESSION['kyselyt_csrf'];
 $notice = '';
 $base = '/kyselyt/hallinta/';
+$adminView = is_string($_GET['view'] ?? null) ? $_GET['view'] : 'list';
+if (!in_array($adminView, ['list', 'new', 'settings'], true)) $adminView = 'list';
 function csrfInput(string $csrf): string { return '<input type="hidden" name="csrf" value="' . h($csrf) . '">'; }
 function adminLink(int|string $id): string { return '/kyselyt/hallinta/?survey=' . rawurlencode((string)$id); }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -46,8 +48,13 @@ if ($s && isset($_GET['csv'])) {
     exportCsv($db, $s, fopen('php://output', 'wb')); exit;
 }
 $labels = ['draft' => 'Luonnos', 'open' => 'Avoin', 'closed' => 'Suljettu'];
-$out = '<main class="admin"><h1>Kyselyiden hallinta</h1><p><a href="' . $base . '">Kaikki kyselyt</a></p>';
-if ($notice) $out .= '<p role="status">' . h($notice) . '</p>';
+$adminQuery = trim((string)($_GET['q'] ?? ''));
+if (mb_strlen($adminQuery) > 100) $adminQuery = mb_substr($adminQuery, 0, 100);
+$adminStatus = is_string($_GET['status'] ?? null) ? $_GET['status'] : 'all';
+if (!in_array($adminStatus, ['all', 'draft', 'open', 'closed'], true)) $adminStatus = 'all';
+$pageTitle = $s ? 'Kysely' : ($adminView === 'new' ? 'Uusi kysely' : ($adminView === 'settings' ? 'Asetukset' : 'Kyselyt'));
+$out = '<main class="admin"><div class="admin-head"><div><p class="k-eyebrow">Hallinta</p><h1>' . h($pageTitle) . '</h1></div><details class="k-admin-menu"><summary aria-label="Avaa hallintavalikko" title="Hallintavalikko"><span aria-hidden="true">☰</span></summary><nav aria-label="Hallinta"><a href="' . $base . '">Kyselyt</a><a href="' . $base . '?view=new">Uusi kysely</a><a href="' . $base . '?view=settings">Asetukset</a></nav></details></div>';
+if ($notice) $out .= '<p class="admin-notice" role="status">' . h($notice) . '</p>';
 if ($s) {
     $d = decode($s['definition_json']);
     $out .= '<section class="k-question"><h2>' . h($s['title']) . '</h2><p>' . h($s['organisation']) . ' · ' . $labels[$s['state']] . '</p>';
@@ -77,16 +84,30 @@ if ($s) {
     foreach ($d['groups'] as $g) { $out .= '<h3>' . h($g['title']) . '</h3>'; foreach ($g['questions'] as $q) $out .= '<p><strong>' . h($q['title']) . '</strong><br>' . h($q['description']) . '</p>'; }
     $out .= '</details>';
 } else {
-    $out .= '<section class="k-question"><h2>Tuo uusi kysely</h2><form method="post" enctype="multipart/form-data">' . csrfInput($csrf) . '<input type="hidden" name="action" value="preview"><label class="k-field">JSON-tiedosto (enintään 1 MiB)<input type="file" name="definition" accept="application/json,.json" required></label><button class="k-action">Näytä esikatselu</button></form></section>';
+    if ($adminView === 'new') {
+        $out .= '<section class="k-question"><h2>Tuo uusi kysely</h2><form method="post" enctype="multipart/form-data">' . csrfInput($csrf) . '<input type="hidden" name="action" value="preview"><label class="k-field">JSON-tiedosto (enintään 1 MiB)<input type="file" name="definition" accept="application/json,.json" required></label><button class="k-action">Näytä esikatselu</button></form></section>';
     if (isset($_SESSION['kyselyt_import'])) {
         $d = $_SESSION['kyselyt_import'];
         $out .= '<section class="k-question"><h2>Tuonnin esikatselu</h2><p>' . h($d['description']) . '</p><p>' . h($d['instructions']) . '</p>';
         foreach ($d['groups'] as $g) { $out .= '<h3>' . h($g['title']) . '</h3>'; foreach ($g['questions'] as $q) $out .= '<p><strong>' . h($q['title']) . '</strong><br>' . h($q['description']) . '</p>'; }
         $out .= '<p>Vastausvaihtoehdot: ' . h(implode(' · ', OPTIONS)) . '</p><p>' . h(TEAM_LABEL) . '</p><form method="post">' . csrfInput($csrf) . '<input type="hidden" name="action" value="import"><label class="k-field">Kyselyn nimi<input name="title" maxlength="250" required value="' . h($d['title']) . '"></label><label class="k-field">Organisaatio / asiakasryhmä<input name="organisation" maxlength="250" required></label><button class="k-action k-primary">Tallenna luonnos</button></form></section>';
+        }
+    } elseif ($adminView === 'settings') {
+        $out .= '<section class="k-question admin-settings"><h2>Asetukset</h2><p>Tässä versiossa ei ole vielä käyttäjän muokattavia asetuksia. Tämä näkymä toimii asetusten kotina myöhemmille hallinta-asetuksille.</p><dl><div><dt>Kyselytuonti</dt><dd>JSON, enintään 1 MiB</dd></div><div><dt>Hallinta</dt><dd>Suojattu kirjautuminen</dd></div></dl></section>';
+    } else {
+        $rows = $db->query('SELECT s.*, (SELECT COUNT(*) FROM submissions r WHERE r.survey_id=s.id) AS response_count FROM surveys s ORDER BY s.id DESC')->fetchAll();
+        $totalRows = count($rows);
+        $rows = array_values(array_filter($rows, static function (array $row) use ($adminQuery, $adminStatus): bool {
+            if ($adminStatus !== 'all' && $row['state'] !== $adminStatus) return false;
+            if ($adminQuery === '') return true;
+            return mb_stripos((string)$row['title'], $adminQuery) !== false || mb_stripos((string)$row['organisation'], $adminQuery) !== false;
+        }));
+        $out .= '<section class="admin-list" data-stui="STUI-20-001"><div class="admin-list__titlebar"><div><h2>Kaikki kyselyt</h2><p class="k-muted">' . count($rows) . ' / ' . $totalRows . ' kyselyä</p></div><div class="admin-list__titleActions"><span class="admin-stui-id">STUI-20-001</span><a class="k-action k-primary" href="' . $base . '?view=new">+ Uusi kysely</a></div></div>';
+        $out .= '<form class="admin-list__toolbar" method="get"><label><span class="admin-sr-only">Hae kyselyitä</span><input class="admin-list__search" type="search" name="q" value="' . h($adminQuery) . '" placeholder="Hae nimellä tai organisaatiolla"></label><label><span class="admin-list__filterLabel">Tila</span><select class="admin-list__filter" name="status"><option value="all"' . ($adminStatus === 'all' ? ' selected' : '') . '>Kaikki</option><option value="draft"' . ($adminStatus === 'draft' ? ' selected' : '') . '>Luonnos</option><option value="open"' . ($adminStatus === 'open' ? ' selected' : '') . '>Avoin</option><option value="closed"' . ($adminStatus === 'closed' ? ' selected' : '') . '>Suljettu</option></select></label><button class="k-action" type="submit">Suodata</button><a class="admin-list__clear" href="' . $base . '">Tyhjennä</a></form>';
+        $out .= '<div class="table-wrap"><table class="admin-stui-table"><thead><tr><th>Nimi</th><th>Organisaatio</th><th>Tila</th><th>Luotu</th><th>Vastauksia</th><th><span class="admin-sr-only">Toiminnot</span></th></tr></thead><tbody>';
+        foreach ($rows as $row) $out .= '<tr><td><a href="' . adminLink($row['id']) . '">' . h($row['title']) . '</a></td><td>' . h($row['organisation']) . '</td><td><span class="admin-status admin-status--' . h($row['state']) . '">' . h($labels[$row['state']]) . '</span></td><td>' . h((new DateTimeImmutable($row['created_at']))->setTimezone(new DateTimeZone('Europe/Helsinki'))->format('d.m.Y H:i')) . '</td><td>' . (int)$row['response_count'] . '</td><td><a class="admin-row-action" href="' . adminLink($row['id']) . '">Avaa</a></td></tr>';
+        if (!$rows) $out .= '<tr><td class="admin-list__empty" colspan="6">Ei kyselyitä näillä rajauksilla.</td></tr>';
+        $out .= '</tbody></table></div></section>';
     }
-    $out .= '<h2>Kyselyt</h2><div class="table-wrap"><table><thead><tr><th>Nimi</th><th>Tila</th><th>Luotu</th><th>Vastauksia</th></tr></thead><tbody>';
-    $rows = $db->query('SELECT s.*, (SELECT COUNT(*) FROM submissions r WHERE r.survey_id=s.id) AS response_count FROM surveys s ORDER BY s.id DESC')->fetchAll();
-    foreach ($rows as $row) $out .= '<tr><td><a href="' . adminLink($row['id']) . '">' . h($row['title']) . '</a><br>' . h($row['organisation']) . '</td><td>' . $labels[$row['state']] . '</td><td>' . h((new DateTimeImmutable($row['created_at']))->setTimezone(new DateTimeZone('Europe/Helsinki'))->format('d.m.Y H:i')) . '</td><td>' . (int)$row['response_count'] . '</td></tr>';
-    $out .= '</tbody></table></div>';
 }
 shell($out . '</main>');

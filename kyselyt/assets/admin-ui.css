@@ -1,0 +1,47 @@
+/* Kyselyt admin — STUI-20-001 inspired list chrome */
+#survey .k-top{position:relative}
+#survey .k-admin-menu{position:relative;margin-left:auto}
+#survey .k-admin-menu summary{list-style:none;display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--k-line);border-radius:9px;background:var(--k-paper);cursor:pointer;font-size:24px;line-height:1}
+#survey .k-admin-menu summary::-webkit-details-marker{display:none}
+#survey .k-admin-menu[open] summary{background:var(--k-soft)}
+#survey .k-admin-menu nav{position:absolute;z-index:30;right:0;top:calc(100% + 8px);min-width:210px;padding:7px;background:var(--k-paper);border:1px solid var(--k-line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+#survey .k-admin-menu nav a{display:block;padding:11px 12px;border-radius:7px;color:var(--k-ink);text-decoration:none}
+#survey .k-admin-menu nav a:hover,#survey .k-admin-menu nav a:focus-visible{background:var(--k-soft)}
+#survey .admin{max-width:1180px;margin:auto;padding:28px}
+#survey .admin-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:0 0 24px}
+#survey .admin-head h1{margin:0}
+#survey .admin-head .k-eyebrow{margin-bottom:5px}
+#survey .admin-notice{padding:12px 14px;border:1px solid var(--k-active);border-radius:8px;background:var(--k-paper)}
+#survey .admin-list{overflow:hidden;border:1px solid var(--k-line);border-radius:12px;background:var(--k-paper)}
+#survey .admin-list__titlebar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-bottom:1px solid var(--k-line)}
+#survey .admin-list__titlebar h2{margin:0;font-size:19px;font-weight:600}
+#survey .admin-list__titlebar p{margin:3px 0 0}
+#survey .admin-list__titleActions{display:flex;align-items:center;gap:10px}
+#survey .admin-stui-id{display:inline-flex;align-items:center;min-height:26px;padding:3px 8px;border:1px solid var(--k-line);border-radius:999px;color:var(--k-sub);font-size:11px;letter-spacing:.45px}
+#survey .admin-list__toolbar{display:flex;align-items:flex-end;gap:10px;padding:12px 18px;border-bottom:1px solid var(--k-line);background:var(--k-bg)}
+#survey .admin-list__toolbar label{display:grid;gap:4px}
+#survey .admin-list__search,#survey .admin-list__filter{min-height:42px;border:1px solid var(--k-line);border-radius:8px;background:var(--k-paper);color:var(--k-ink);padding:8px 10px}
+#survey .admin-list__search{width:min(360px,48vw)}
+#survey .admin-list__filterLabel{font-size:12px;color:var(--k-sub)}
+#survey .admin-stui-table{border-collapse:separate;border-spacing:0;width:100%;min-width:720px}
+#survey .admin-stui-table th{padding:10px 14px;background:var(--k-soft);color:var(--k-sub);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.35px;border-bottom:1px solid var(--k-line)}
+#survey .admin-stui-table td{padding:13px 14px;border-bottom:1px solid var(--k-line);vertical-align:middle}
+#survey .admin-stui-table tbody tr:last-child td{border-bottom:0}
+#survey .admin-stui-table tbody tr:hover{background:var(--k-soft)}
+#survey .admin-stui-table td:first-child a{font-weight:600;color:var(--k-ink);text-decoration:none}
+#survey .admin-stui-table td:first-child a:hover{text-decoration:underline}
+#survey .admin-status{display:inline-flex;align-items:center;min-height:25px;padding:3px 8px;border:1px solid var(--k-line);border-radius:999px;font-size:12px;font-weight:600}
+#survey .admin-status--draft{color:var(--k-sub)}
+#survey .admin-status--open{border-color:light-dark(#4f9b65,#63ce83);color:light-dark(#24623a,#8ce0a4)}
+#survey .admin-status--closed{border-color:light-dark(#7b8289,#848c94);color:var(--k-sub)}
+#survey .admin-list__empty{text-align:center;color:var(--k-sub);padding:28px!important}
+#survey .admin-settings dl{display:grid;gap:12px;margin:20px 0 0}
+#survey .admin-settings dl div{display:grid;grid-template-columns:minmax(130px,180px) 1fr;gap:16px;padding-top:12px;border-top:1px solid var(--k-line)}
+#survey .admin-settings dt{color:var(--k-sub)}
+#survey .admin-settings dd{margin:0}
+@media(max-width:700px){#survey .admin{padding:20px 16px}#survey .admin-head{align-items:center}#survey .admin-list__titlebar{align-items:flex-start;flex-direction:column}#survey .admin-list__titleActions{width:100%;justify-content:space-between}#survey .admin-list__toolbar{align-items:stretch;flex-direction:column}#survey .admin-list__search{width:100%}#survey .admin-list__toolbar .k-action{width:100%}#survey .admin-settings dl div{grid-template-columns:1fr;gap:4px}}
+
+#survey .admin-list__clear{align-self:center;padding:8px 4px}
+#survey .admin-row-action{display:inline-flex;padding:6px 9px;border:1px solid var(--k-line);border-radius:7px;color:var(--k-ink);text-decoration:none}
+#survey .admin-row-action:hover,#survey .admin-row-action:focus-visible{background:var(--k-soft)}
+#survey .admin-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
