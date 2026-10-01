@@ -13,7 +13,7 @@ function jsonResponse(array $data, int $status = 200): never {
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function shell(string $content, bool $script = false): never {
     header('Content-Type: text/html; charset=utf-8');
-    echo '<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Koulutustarvekysely · 1me</title><link rel="stylesheet" href="/kyselyt/assets/survey.css"></head><body><div id="survey"><header class="k-top"><div class="k-brand"><span class="k-mark">1me</span><span>Koulutustarvekysely</span></div><span class="k-muted">1me.fi/kyselyt</span></header>' . $content . '<footer class="k-bottom"><span>TSI Finland Oy</span></footer></div>';
+    echo '<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Koulutustarvekysely · 1ME</title><link rel="icon" type="image/svg+xml" href="/kyselyt/assets/1me-logo.svg"><link rel="stylesheet" href="/kyselyt/assets/survey.css"></head><body><div id="survey"><header class="k-top"><div class="k-brand"><img class="k-logo" src="/kyselyt/assets/1me-logo.svg" alt="" aria-hidden="true"><span class="k-wordmark">1ME</span><span>Koulutustarvekysely</span></div><span class="k-muted">1me.fi/kyselyt</span></header>' . $content . '<footer class="k-bottom"><span>TSI Finland Oy</span></footer></div>';
     if ($script) echo '<script type="module" src="/kyselyt/assets/survey.js"></script>';
     echo '</body></html>'; exit;
 }
