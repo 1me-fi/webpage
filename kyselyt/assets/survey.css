@@ -5,7 +5,7 @@ html{color-scheme:light dark}body{margin:0}
     #survey button{color:inherit}
     #survey .k-top{padding:18px 28px;background:var(--k-paper);display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--k-line)}
     #survey .k-brand{display:flex;align-items:center;gap:9px;font-weight:500}
-    #survey .k-logo{width:31px;height:26px;display:block;flex:0 0 auto;object-fit:cover}
+    #survey .k-logo{width:31px;height:26px;max-width:31px;max-height:26px;display:block;flex:0 0 31px;object-fit:cover}
     #survey .k-wordmark{color:var(--k-orange);font-weight:600;letter-spacing:.2px;font-size:21px}
     #survey .k-muted{color:var(--k-sub);font-size:13px}
     #survey .k-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:32px;padding:30px 28px}
@@ -29,11 +29,11 @@ html{color-scheme:light dark}body{margin:0}
     #survey .k-choices{display:grid;grid-template-columns:1fr;gap:8px}
     #survey .k-choice{--k-choice-accent:var(--k-line);--k-choice-tint:var(--k-paper);position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;border:1px solid var(--k-line);border-radius:8px;min-height:52px;padding:10px 14px 10px 18px;background:var(--k-paper);color:var(--k-ink);font-size:14px}
     #survey .k-choice::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--k-choice-accent)}
-    #survey .k-choice[data-option="basics"]{--k-choice-accent:light-dark(#b94d16,#ff9b68);--k-choice-tint:light-dark(#fff8f4,#282522)}
-    #survey .k-choice[data-option="refresh"]{--k-choice-accent:light-dark(#8a6900,#f0c94c);--k-choice-tint:light-dark(#fffaf0,#292821)}
-    #survey .k-choice[data-option="sufficient"]{--k-choice-accent:light-dark(#2f7d46,#63ce83);--k-choice-tint:light-dark(#f5fbf6,#232824)}
-    #survey .k-choice[data-option="not_needed"]{--k-choice-accent:light-dark(#68707a,#a7afb9);--k-choice-tint:light-dark(#f7f8f8,#262829)}
-    #survey .k-choice[data-option="unsure"]{--k-choice-accent:light-dark(#5959c9,#8179ff);--k-choice-tint:light-dark(#f7f6ff,#25252b)}
+    #survey .k-choice[data-option="basics"],#survey .k-choice:has(input[value="basics"]){--k-choice-accent:light-dark(#b94d16,#ff9b68);--k-choice-tint:light-dark(#fff8f4,#282522)}
+    #survey .k-choice[data-option="refresh"],#survey .k-choice:has(input[value="refresh"]){--k-choice-accent:light-dark(#8a6900,#f0c94c);--k-choice-tint:light-dark(#fffaf0,#292821)}
+    #survey .k-choice[data-option="sufficient"],#survey .k-choice:has(input[value="sufficient"]){--k-choice-accent:light-dark(#2f7d46,#63ce83);--k-choice-tint:light-dark(#f5fbf6,#232824)}
+    #survey .k-choice[data-option="not_needed"],#survey .k-choice:has(input[value="not_needed"]){--k-choice-accent:light-dark(#68707a,#a7afb9);--k-choice-tint:light-dark(#f7f8f8,#262829)}
+    #survey .k-choice[data-option="unsure"],#survey .k-choice:has(input[value="unsure"]){--k-choice-accent:light-dark(#5959c9,#8179ff);--k-choice-tint:light-dark(#f7f6ff,#25252b)}
     #survey .k-choice:has(input:checked){border-color:var(--k-choice-accent);background:var(--k-choice-tint);color:var(--k-ink)}
     #survey input[type="radio"],#survey input[type="checkbox"]{width:18px;height:18px;flex-shrink:0;margin:0;accent-color:var(--k-active)}
     #survey .k-choice input[type="radio"]{accent-color:var(--k-choice-accent)}
