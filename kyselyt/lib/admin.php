@@ -96,10 +96,18 @@ if ($s) {
     } elseif ($adminView === 'settings') {
         $out .= '<section class="k-question admin-settings"><h2>Asetukset</h2><p>Tässä versiossa ei ole vielä käyttäjän muokattavia asetuksia. Tämä näkymä toimii asetusten kotina myöhemmille hallinta-asetuksille.</p><dl><div><dt>Kyselytuonti</dt><dd>JSON, enintään 1 MiB</dd></div><div><dt>Hallinta</dt><dd>Suojattu kirjautuminen</dd></div></dl></section>';
     } else {
-        $out .= '<section class="admin-list" data-stui="STUI-20-001"><div class="admin-list__titlebar"><div><h2>Kaikki kyselyt</h2></div><div class="admin-list__titleActions"><span class="admin-stui-id">STUI-20-001</span><a class="k-action k-primary" href="' . $base . '?view=new">+ Uusi kysely</a></div></div><div class="table-wrap"><table class="admin-stui-table"><thead><tr><th>Nimi</th><th>Tila</th><th>Luotu</th><th>Vastauksia</th></tr></thead><tbody>';
         $rows = $db->query('SELECT s.*, (SELECT COUNT(*) FROM submissions r WHERE r.survey_id=s.id) AS response_count FROM surveys s ORDER BY s.id DESC')->fetchAll();
-        foreach ($rows as $row) $out .= '<tr><td><a href="' . adminLink($row['id']) . '">' . h($row['title']) . '</a><br>' . h($row['organisation']) . '</td><td><span class="admin-status admin-status--' . h($row['state']) . '">' . h($labels[$row['state']]) . '</span></td><td>' . h((new DateTimeImmutable($row['created_at']))->setTimezone(new DateTimeZone('Europe/Helsinki'))->format('d.m.Y H:i')) . '</td><td>' . (int)$row['response_count'] . '</td></tr>';
-        if (!$rows) $out .= '<tr><td class="admin-list__empty" colspan="4">Ei kyselyitä.</td></tr>';
+        $totalRows = count($rows);
+        $rows = array_values(array_filter($rows, static function (array $row) use ($adminQuery, $adminStatus): bool {
+            if ($adminStatus !== 'all' && $row['state'] !== $adminStatus) return false;
+            if ($adminQuery === '') return true;
+            return mb_stripos((string)$row['title'], $adminQuery) !== false || mb_stripos((string)$row['organisation'], $adminQuery) !== false;
+        }));
+        $out .= '<section class="admin-list" data-stui="STUI-20-001"><div class="admin-list__titlebar"><div><h2>Kaikki kyselyt</h2><p class="k-muted">' . count($rows) . ' / ' . $totalRows . ' kyselyä</p></div><div class="admin-list__titleActions"><span class="admin-stui-id">STUI-20-001</span><a class="k-action k-primary" href="' . $base . '?view=new">+ Uusi kysely</a></div></div>';
+        $out .= '<form class="admin-list__toolbar" method="get"><label><span class="admin-sr-only">Hae kyselyitä</span><input class="admin-list__search" type="search" name="q" value="' . h($adminQuery) . '" placeholder="Hae nimellä tai organisaatiolla"></label><label><span class="admin-list__filterLabel">Tila</span><select class="admin-list__filter" name="status"><option value="all"' . ($adminStatus === 'all' ? ' selected' : '') . '>Kaikki</option><option value="draft"' . ($adminStatus === 'draft' ? ' selected' : '') . '>Luonnos</option><option value="open"' . ($adminStatus === 'open' ? ' selected' : '') . '>Avoin</option><option value="closed"' . ($adminStatus === 'closed' ? ' selected' : '') . '>Suljettu</option></select></label><button class="k-action" type="submit">Suodata</button><a class="admin-list__clear" href="' . $base . '">Tyhjennä</a></form>';
+        $out .= '<div class="table-wrap"><table class="admin-stui-table"><thead><tr><th>Nimi</th><th>Organisaatio</th><th>Tila</th><th>Luotu</th><th>Vastauksia</th><th><span class="admin-sr-only">Toiminnot</span></th></tr></thead><tbody>';
+        foreach ($rows as $row) $out .= '<tr><td><a href="' . adminLink($row['id']) . '">' . h($row['title']) . '</a></td><td>' . h($row['organisation']) . '</td><td><span class="admin-status admin-status--' . h($row['state']) . '">' . h($labels[$row['state']]) . '</span></td><td>' . h((new DateTimeImmutable($row['created_at']))->setTimezone(new DateTimeZone('Europe/Helsinki'))->format('d.m.Y H:i')) . '</td><td>' . (int)$row['response_count'] . '</td><td><a class="admin-row-action" href="' . adminLink($row['id']) . '">Avaa</a></td></tr>';
+        if (!$rows) $out .= '<tr><td class="admin-list__empty" colspan="6">Ei kyselyitä näillä rajauksilla.</td></tr>';
         $out .= '</tbody></table></div></section>';
     }
 }
