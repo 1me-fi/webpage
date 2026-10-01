@@ -4,6 +4,7 @@ $_SESSION['kyselyt_csrf'] ??= bin2hex(random_bytes(32));
 $csrf = $_SESSION['kyselyt_csrf'];
 $notice = '';
 $base = '/kyselyt/hallinta/';
+$adminView = is_string($_GET['view'] ?? null) ? $_GET['view'] : 'list';
 function csrfInput(string $csrf): string { return '<input type="hidden" name="csrf" value="' . h($csrf) . '">'; }
 function adminLink(int|string $id): string { return '/kyselyt/hallinta/?survey=' . rawurlencode((string)$id); }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
