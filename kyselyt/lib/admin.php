@@ -48,8 +48,10 @@ if ($s && isset($_GET['csv'])) {
     exportCsv($db, $s, fopen('php://output', 'wb')); exit;
 }
 $labels = ['draft' => 'Luonnos', 'open' => 'Avoin', 'closed' => 'Suljettu'];
-$out = '<main class="admin"><h1>Kyselyiden hallinta</h1><p><a href="' . $base . '">Kaikki kyselyt</a></p>';
-if ($notice) $out .= '<p role="status">' . h($notice) . '</p>';
+$adminCssVersion = (string)(@filemtime(__DIR__ . '/../assets/admin-ui.css') ?: 1);
+$pageTitle = $s ? 'Kysely' : ($adminView === 'new' ? 'Uusi kysely' : ($adminView === 'settings' ? 'Asetukset' : 'Kyselyt'));
+$out = '<link rel="stylesheet" href="/kyselyt/assets/admin-ui.css?v=' . h($adminCssVersion) . '"><main class="admin"><div class="admin-head"><div><p class="k-eyebrow">Hallinta</p><h1>' . h($pageTitle) . '</h1></div><details class="k-admin-menu"><summary aria-label="Avaa hallintavalikko" title="Hallintavalikko"><span aria-hidden="true">☰</span></summary><nav aria-label="Hallinta"><a href="' . $base . '">Kyselyt</a><a href="' . $base . '?view=new">Uusi kysely</a><a href="' . $base . '?view=settings">Asetukset</a></nav></details></div>';
+if ($notice) $out .= '<p class="admin-notice" role="status">' . h($notice) . '</p>';
 if ($s) {
     $d = decode($s['definition_json']);
     $out .= '<section class="k-question"><h2>' . h($s['title']) . '</h2><p>' . h($s['organisation']) . ' · ' . $labels[$s['state']] . '</p>';
