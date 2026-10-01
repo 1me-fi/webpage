@@ -81,7 +81,8 @@ if ($s) {
     foreach ($d['groups'] as $g) { $out .= '<h3>' . h($g['title']) . '</h3>'; foreach ($g['questions'] as $q) $out .= '<p><strong>' . h($q['title']) . '</strong><br>' . h($q['description']) . '</p>'; }
     $out .= '</details>';
 } else {
-    $out .= '<section class="k-question"><h2>Tuo uusi kysely</h2><form method="post" enctype="multipart/form-data">' . csrfInput($csrf) . '<input type="hidden" name="action" value="preview"><label class="k-field">JSON-tiedosto (enintään 1 MiB)<input type="file" name="definition" accept="application/json,.json" required></label><button class="k-action">Näytä esikatselu</button></form></section>';
+    if ($adminView === 'new') {
+        $out .= '<section class="k-question"><h2>Tuo uusi kysely</h2><form method="post" enctype="multipart/form-data">' . csrfInput($csrf) . '<input type="hidden" name="action" value="preview"><label class="k-field">JSON-tiedosto (enintään 1 MiB)<input type="file" name="definition" accept="application/json,.json" required></label><button class="k-action">Näytä esikatselu</button></form></section>';
     if (isset($_SESSION['kyselyt_import'])) {
         $d = $_SESSION['kyselyt_import'];
         $out .= '<section class="k-question"><h2>Tuonnin esikatselu</h2><p>' . h($d['description']) . '</p><p>' . h($d['instructions']) . '</p>';
