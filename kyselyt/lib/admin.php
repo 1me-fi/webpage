@@ -48,6 +48,10 @@ if ($s && isset($_GET['csv'])) {
     exportCsv($db, $s, fopen('php://output', 'wb')); exit;
 }
 $labels = ['draft' => 'Luonnos', 'open' => 'Avoin', 'closed' => 'Suljettu'];
+$adminQuery = trim((string)($_GET['q'] ?? ''));
+if (mb_strlen($adminQuery) > 100) $adminQuery = mb_substr($adminQuery, 0, 100);
+$adminStatus = is_string($_GET['status'] ?? null) ? $_GET['status'] : 'all';
+if (!in_array($adminStatus, ['all', 'draft', 'open', 'closed'], true)) $adminStatus = 'all';
 $adminCssVersion = (string)(@filemtime(__DIR__ . '/../assets/admin-ui.css') ?: 1);
 $pageTitle = $s ? 'Kysely' : ($adminView === 'new' ? 'Uusi kysely' : ($adminView === 'settings' ? 'Asetukset' : 'Kyselyt'));
 $out = '<link rel="stylesheet" href="/kyselyt/assets/admin-ui.css?v=' . h($adminCssVersion) . '"><main class="admin"><div class="admin-head"><div><p class="k-eyebrow">Hallinta</p><h1>' . h($pageTitle) . '</h1></div><details class="k-admin-menu"><summary aria-label="Avaa hallintavalikko" title="Hallintavalikko"><span aria-hidden="true">☰</span></summary><nav aria-label="Hallinta"><a href="' . $base . '">Kyselyt</a><a href="' . $base . '?view=new">Uusi kysely</a><a href="' . $base . '?view=settings">Asetukset</a></nav></details></div>';
