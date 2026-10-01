@@ -13,8 +13,11 @@ function jsonResponse(array $data, int $status = 200): never {
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function shell(string $content, bool $script = false): never {
     header('Content-Type: text/html; charset=utf-8');
-    echo '<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Koulutustarvekysely · 1ME</title><link rel="icon" type="image/svg+xml" href="/kyselyt/assets/1me-logo.svg"><link rel="stylesheet" href="/kyselyt/assets/survey.css"></head><body><div id="survey"><header class="k-top"><div class="k-brand"><img class="k-logo" src="/kyselyt/assets/1me-logo.svg" alt="" aria-hidden="true"><span class="k-wordmark">1ME</span><span>Koulutustarvekysely</span></div><span class="k-muted">1me.fi/kyselyt</span></header>' . $content . '<footer class="k-bottom"><span>TSI Finland Oy</span></footer></div>';
-    if ($script) echo '<script type="module" src="/kyselyt/assets/survey.js"></script>';
+    $cssVersion = (string)(@filemtime(__DIR__ . '/assets/survey.css') ?: 1);
+    $jsVersion = (string)(@filemtime(__DIR__ . '/assets/survey.js') ?: 1);
+    $logoVersion = (string)(@filemtime(__DIR__ . '/assets/1me-logo.svg') ?: 1);
+    echo '<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Koulutustarvekysely · 1ME</title><link rel="icon" type="image/svg+xml" href="/kyselyt/assets/1me-logo.svg?v=' . h($logoVersion) . '"><link rel="stylesheet" href="/kyselyt/assets/survey.css?v=' . h($cssVersion) . '"></head><body><div id="survey"><header class="k-top"><div class="k-brand"><img class="k-logo" src="/kyselyt/assets/1me-logo.svg?v=' . h($logoVersion) . '" width="31" height="26" alt="" aria-hidden="true"><span class="k-wordmark">1ME</span><span>Koulutustarvekysely</span></div><span class="k-muted">1me.fi/kyselyt</span></header>' . $content . '<footer class="k-bottom"><span>TSI Finland Oy</span></footer></div>';
+    if ($script) echo '<script type="module" src="/kyselyt/assets/survey.js?v=' . h($jsVersion) . '"></script>';
     echo '</body></html>'; exit;
 }
 function body(int $limit): mixed {
