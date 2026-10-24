@@ -243,7 +243,17 @@ export function placementForPackage(pkg) {
   return { alternative: modelVersion, version: "v1" };
 }
 
-export function packageFingerprint(pkg) {
+function fnv32Hex(text, seed) {
+  let hash = seed;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+/** Previous webpage fingerprint. Readers still match it. New ids do not use it. */
+function legacyPackageFingerprint(pkg) {
   const text = JSON.stringify(pkg);
   let hash = 2166136261;
   for (let i = 0; i < text.length; i += 1) {
@@ -253,6 +263,12 @@ export function packageFingerprint(pkg) {
   return (hash >>> 0).toString(16);
 }
 
+/** Same construction as stuiExperimentContentHash. Length rule: platform stui-experiment-package-v1. */
+export function packageFingerprint(pkg) {
+  const text = JSON.stringify(pkg);
+  return `${fnv32Hex(text, 0x811c9dc5)}${fnv32Hex(text, 0x811c9dc5 ^ text.length)}`;
+}
+
 export function emptyImportLibrary() {
   return { entries: [] };
 }
@@ -260,8 +276,10 @@ export function emptyImportLibrary() {
 export function rememberImportedBundle(library, bundle) {
   const parsed = readStudioPlaygroundExport(bundle);
   const id = packageFingerprint(parsed.pkg);
+  const legacyId = legacyPackageFingerprint(parsed.pkg);
   const entries = Array.isArray(library?.entries) ? library.entries : [];
-  if (entries.some((entry) => entry.id === id)) return { library: { entries }, id, duplicate: true };
+  const existing = entries.find((entry) => entry.id === id || entry.id === legacyId);
+  if (existing) return { library: { entries }, id: existing.id, duplicate: true };
   return {
     library: { entries: [...entries, { id, bundle: parsed.bundle }] },
     id,

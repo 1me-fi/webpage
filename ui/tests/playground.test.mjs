@@ -9,6 +9,7 @@ import {
   hierarchyFromModelKey,
   placementForPackage,
   readStudioPlaygroundExport,
+  packageFingerprint,
   playgroundExportFileName,
   rememberImportedBundle,
   STUI_EXPERIMENT_STANDARDS,
@@ -707,4 +708,29 @@ test("fixture reorder preserves a permutation and deterministic identity across 
   assert.deepEqual(readStudioPlaygroundExport({ ...specialReordered, stuiExperiment: undefined }).pkg, specialReordered.stuiExperiment);
   assert.equal(specialReordered.stuiExperiment.fixture.rows[1].values.name, "$& $1 </script>");
   assert.equal(playgroundExportFileName("STUI-20-002", "baseline"), "stui-20-002-baseline.json");
+});
+
+test("content fingerprint is 16 hex and a legacy 8-hex library id still matches", () => {
+  const bundle = readJson(join(ui, "tests/fixtures/stui-20-002-order10-playground-transpose.json"));
+  const parsed = readStudioPlaygroundExport(bundle);
+  assert.equal(parsed.pkg.lineage.basedOnContentHash, "99676246");
+  assert.equal(packageFingerprint(parsed.pkg), "bd0af502006c3a2b");
+  assert.equal(withTranspose(parsed.bundle, true).stuiExperiment.lineage.basedOnContentHash, "99676246");
+  const edited = withTranspose(parsed.bundle, false);
+  assert.equal(edited.stuiExperiment.lineage.basedOnContentHash, "bd0af502006c3a2b");
+  const fresh = rememberImportedBundle({ entries: [] }, parsed.bundle);
+  assert.equal(fresh.duplicate, false);
+  assert.equal(fresh.id, "bd0af502006c3a2b");
+  const again = rememberImportedBundle(fresh.library, parsed.bundle);
+  assert.equal(again.duplicate, true);
+  assert.equal(again.library.entries[0].id, "bd0af502006c3a2b");
+  const legacy = rememberImportedBundle(
+    { entries: [{ id: "bd0af502", bundle: parsed.bundle }] },
+    parsed.bundle,
+  );
+  assert.equal(legacy.duplicate, true);
+  assert.equal(legacy.id, "bd0af502");
+  assert.equal(legacy.library.entries.length, 1);
+  assert.equal(legacy.library.entries[0].id, "bd0af502");
+  assert.equal(legacy.library.entries[0].bundle.stuiExperiment.lineage.basedOnContentHash, "99676246");
 });
